@@ -1,0 +1,277 @@
+{
+  "version": "1.0",
+  "rules": {
+    "csharp": {
+      "style": {
+        "braces": "otbs",
+        "indentation": {
+          "size": 4,
+          "useTabs": false
+        },
+        "newlines": {
+          "beforeOpenBrace": true,
+          "beforeElse": true,
+          "beforeCatch": true,
+          "beforeFinally": true
+        },
+        "maxLineLength": 120,
+        "preferExpressionBodiedMembers": true
+      },
+      "naming": {
+        "interfaces": "^I[A-Z][a-zA-Z0-9]*$",
+        "types": "^[A-Z][a-zA-Z0-9]*$",
+        "methods": "^[A-Z][a-zA-Z0-9]*$",
+        "properties": "^[A-Z][a-zA-Z0-9]*$",
+        "fields": {
+          "private": "^_[a-z][a-zA-Z0-9]*$",
+          "protected": "^_[a-z][a-zA-Z0-9]*$",
+          "public": "^[A-Z][a-zA-Z0-9]*$"
+        },
+        "parameters": "^[a-z][a-zA-Z0-9]*$",
+        "locals": "^[a-z][a-zA-Z0-9]*$",
+        "constants": "^[A-Z][A-Z0-9_]*$",
+        "events": "^[A-Z][a-zA-Z0-9]*$",
+        "delegates": "^[A-Z][a-zA-Z0-9]*Delegate$"
+      },
+      "cleanArchitecture": {
+        "layers": {
+          "domain": {
+            "allowed": ["Core"],
+            "patterns": {
+              "entities": "^[A-Z][a-zA-Z0-9]*$",
+              "valueObjects": "^[A-Z][a-zA-Z0-9]*Vo$",
+              "aggregates": "^[A-Z][a-zA-Z0-9]*Aggregate$",
+              "domainEvents": "^[A-Z][a-zA-Z0-9]*DomainEvent$"
+            },
+            "rules": [
+              "No dependencies on other layers",
+              "Pure domain logic only",
+              "Use value objects for immutable concepts",
+              "Implement domain events for state changes"
+            ]
+          },
+          "application": {
+            "allowed": ["Application"],
+            "patterns": {
+              "services": "^[A-Z][a-zA-Z0-9]*Service$",
+              "interfaces": "^I[A-Z][a-zA-Z0-9]*Service$",
+              "dtos": "^[A-Z][a-zA-Z0-9]*Dto$",
+              "commands": "^[A-Z][a-zA-Z0-9]*Command$",
+              "queries": "^[A-Z][a-zA-Z0-9]*Query$",
+              "validators": "^[A-Z][a-zA-Z0-9]*Validator$"
+            }
+          },
+          "infrastructure": {
+            "allowed": ["Infrastructure"],
+            "patterns": {
+              "repositories": "^[A-Z][a-zA-Z0-9]*Repository$",
+              "dbContexts": "^[A-Z][a-zA-Z0-9]*DbContext$",
+              "configurations": "^[A-Z][a-zA-Z0-9]*Configuration$"
+            }
+          },
+          "presentation": {
+            "allowed": ["Api", "Web"],
+            "patterns": {
+              "controllers": "^[A-Z][a-zA-Z0-9]*Controller$",
+              "viewModels": "^[A-Z][a-zA-Z0-9]*Vm$",
+              "filters": "^[A-Z][a-zA-Z0-9]*Filter$"
+            }
+          }
+        }
+      },
+      "patterns": {
+        "strategy": {
+          "naming": {
+            "interface": "^I[A-Z][a-zA-Z0-9]*Strategy$",
+            "concrete": "^[A-Z][a-zA-Z0-9]*Strategy$"
+          },
+          "structure": {
+            "required": [
+              "Interface defining strategy contract",
+              "Multiple concrete implementations",
+              "Context class managing strategy"
+            ]
+          }
+        },
+        "factory": {
+          "naming": {
+            "interface": "^I[A-Z][a-zA-Z0-9]*Factory$",
+            "concrete": "^[A-Z][a-zA-Z0-9]*Factory$",
+            "methods": "^Create[A-Z][a-zA-Z0-9]*$"
+          },
+          "structure": {
+            "required": [
+              "Factory interface",
+              "Factory implementation",
+              "Product interface/abstract class",
+              "Concrete products"
+            ]
+          }
+        }
+      },
+      "testing": {
+        "naming": {
+          "testClasses": "^[A-Z][a-zA-Z0-9]*Tests$",
+          "testMethods": "^(Should|When|Given)[A-Z][a-zA-Z0-9]*$",
+          "testDataProperties": "^Test[A-Z][a-zA-Z0-9]*$"
+        },
+        "structure": {
+          "arrangement": "// Arrange",
+          "action": "// Act",
+          "assertion": "// Assert",
+          "testDataMethod": "[Theory]",
+          "testMethod": "[Fact]"
+        },
+        "conventions": {
+          "mocks": {
+            "naming": "^_mock[A-Z][a-zA-Z0-9]*$",
+            "setup": "Mock<T>.Setup()",
+            "verification": "Mock<T>.Verify()"
+          },
+          "fixtures": "^[A-Z][a-zA-Z0-9]*Fixture$",
+          "collections": "^[A-Z][a-zA-Z0-9]*Collection$"
+        }
+      },
+      "azure": {
+        "deployment": {
+          "required": {
+            "files": [
+              "azure-pipelines.yml",
+              "Dockerfile",
+              ".dockerignore"
+            ],
+            "configurations": [
+              "appsettings.json",
+              "appsettings.{Environment}.json",
+              "key-vault-secrets.json"
+            ]
+          },
+          "naming": {
+            "resources": "^[a-z0-9-]*$",
+            "keyVaultSecrets": "^[A-Z][a-zA-Z0-9-]*$"
+          }
+        }
+      },
+      "security": {
+        "required": {
+          "authentication": "JWT Bearer or Azure AD",
+          "authorization": "Role-based or Policy-based",
+          "dataProtection": "Azure Key Vault",
+          "logging": "Application Insights"
+        },
+        "forbidden": {
+          "patterns": [
+            "(?i)password",
+            "(?i)secret",
+            "(?i)connectionstring",
+            "(?i)apikey"
+          ],
+          "locations": [
+            "Source code",
+            "Configuration files",
+            "Commit messages"
+          ]
+        }
+      },
+      "performance": {
+        "caching": {
+          "required": "Distributed caching with Redis",
+          "patterns": {
+            "keys": "^[a-z0-9-:]*$",
+            "duration": "Configurable TTL"
+          }
+        },
+        "async": {
+          "required": true,
+          "patterns": {
+            "methods": "^.*Async$",
+            "suffix": "Async"
+          }
+        },
+        "optimization": {
+          "required": [
+            "Pagination for collections",
+            "Eager loading for related entities",
+            "Compression for HTTP responses",
+            "Response caching for static content"
+          ]
+        }
+      },
+      "analyzers": {
+        "enabled": [
+          "Microsoft.CodeAnalysis.CSharp.Features",
+          "Microsoft.CodeQuality.Analyzers",
+          "Microsoft.NetCore.Analyzers",
+          "Microsoft.CodeAnalysis.NetAnalyzers",
+          "SecurityCodeScan.VS2019",
+          "SonarAnalyzer.CSharp"
+        ],
+        "severity": {
+          "CS8600": "error",  // Converting null literal or possible null value to non-nullable type
+          "CS8602": "error",  // Dereference of a possibly null reference
+          "CS8603": "error",  // Possible null reference return
+          "CS8604": "error",  // Possible null reference argument
+          "CS8618": "error",  // Non-nullable field must contain a non-null value when exiting constructor
+          "CS8625": "error",  // Cannot convert null literal to non-nullable reference type
+          "IDE0005": "warning",  // Using directive is unnecessary
+          "IDE0044": "warning",  // Make field readonly
+          "IDE0051": "warning",  // Private member is unused
+          "IDE0052": "warning",  // Private member can be removed as it is never used
+          "CA1822": "suggestion",  // Mark members as static
+          "CA2007": "warning",  // Consider calling ConfigureAwait on the awaited task
+          "CA2016": "warning",  // Forward the CancellationToken parameter to methods that take one
+          "SCS0005": "error",  // Weak random number generator
+          "S1135": "warning",  // Track uses of TODO tags
+          "S3776": "warning"   // Cognitive Complexity of methods
+        }
+      },
+      "documentation": {
+        "xmlComments": {
+          "required": true,
+          "scope": ["public", "protected"],
+          "elements": [
+            "summary",
+            "param",
+            "returns",
+            "exception",
+            "remarks"
+          ]
+        },
+        "readme": {
+          "required": true,
+          "sections": [
+            "Project Overview",
+            "Architecture",
+            "Setup Instructions",
+            "Development Guidelines",
+            "Deployment",
+            "Testing"
+          ]
+        }
+      }
+    },
+    "dotnet": {
+      "sdk": {
+        "version": "8.0.100",
+        "rollForward": "latestFeature"
+      },
+      "build": {
+        "treatWarningsAsErrors": true,
+        "warningsNotAsErrors": [
+          "CS1591"  // Missing XML comment for publicly visible type or member
+        ]
+      },
+      "nullableReferenceTypes": true,
+      "implicitUsings": true,
+      "features": {
+        "required": [
+          "Minimal APIs",
+          "Global using directives",
+          "File-scoped namespaces",
+          "Record structs",
+          "DateOnly and TimeOnly"
+        ]
+      }
+    }
+  }
+}
