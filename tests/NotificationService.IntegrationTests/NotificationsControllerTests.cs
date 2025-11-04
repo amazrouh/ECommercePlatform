@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Core.Enums;
-using Core.Tests.TestHelpers;
+using Core.Models;
+using Core.TestHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Moq;
 
 namespace NotificationService.IntegrationTests;
 
@@ -91,7 +93,7 @@ public class NotificationsControllerTests : IClassFixture<TestWebApplicationFact
         // Arrange
         var expectedTypes = new[] { NotificationType.Email, NotificationType.Sms };
         _factory.NotificationServiceMock.Setup(x => x.GetSupportedTypes())
-            .Returns(expectedTypes);
+            .Returns(Task.FromResult<IEnumerable<NotificationType>>(expectedTypes));
 
         // Act
         var response = await _client.GetAsync("/api/notifications/types");

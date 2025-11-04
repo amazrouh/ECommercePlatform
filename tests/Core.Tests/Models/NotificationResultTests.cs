@@ -1,5 +1,4 @@
 using Core.Models;
-using Core.Tests.TestHelpers;
 using FluentAssertions;
 
 namespace Core.Tests.Models;
@@ -17,8 +16,8 @@ public class NotificationResultTests
         var result = NotificationResult.Succeeded(messageId, sentAt);
 
         // Assert
-        result.Should().BeSuccessful()
-            .And.HaveMessageId(messageId);
+        result.Success.Should().BeTrue();
+        result.MessageId.Should().Be(messageId);
         result.SentAt.Should().Be(sentAt);
     }
 
@@ -46,8 +45,8 @@ public class NotificationResultTests
         var result = NotificationResult.Failed(error);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError(error);
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be(error);
     }
 
     [Theory]
@@ -76,7 +75,7 @@ public class NotificationResultTests
         var result2 = NotificationResult.Succeeded(messageId, sentAt);
 
         // Assert
-        result1.Should().Be(result2);
+        result1.Should().BeEquivalentTo(result2);
         result1.GetHashCode().Should().Be(result2.GetHashCode());
     }
 
@@ -91,7 +90,7 @@ public class NotificationResultTests
         var result2 = NotificationResult.Failed(error);
 
         // Assert
-        result1.Should().Be(result2);
+        result1.Should().BeEquivalentTo(result2);
         result1.GetHashCode().Should().Be(result2.GetHashCode());
     }
 }

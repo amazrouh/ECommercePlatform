@@ -1,6 +1,7 @@
 using Core.Enums;
 using Core.Interfaces;
-using Core.Tests.TestHelpers;
+using Core.Models;
+using NotificationService.UnitTests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -100,8 +101,8 @@ public class RetryNotificationDecoratorTests
         var actualResult = await _decorator.SendAsync(type, message);
 
         // Assert
-        actualResult.Should().BeFailure()
-            .And.HaveError(exception.Message);
+        actualResult.Success.Should().BeFalse();
+        actualResult.Error.Should().Be(exception.Message);
         _innerMock.Verify(x => x.SendAsync(type, message, default), Times.Exactly(4)); // Initial + 3 retries
         _loggerMock.Verify(
             x => x.Log(
@@ -160,15 +161,15 @@ public class RetryNotificationDecoratorTests
     }
 
     [Fact]
-    public void GetSupportedTypes_DelegatesCall()
+    public async Task GetSupportedTypes_DelegatesCall()
     {
         // Arrange
         var expectedTypes = new[] { NotificationType.Email, NotificationType.Sms };
         _innerMock.Setup(x => x.GetSupportedTypes())
-            .Returns(expectedTypes);
+            .Returns(Task.FromResult<IEnumerable<NotificationType>>(expectedTypes));
 
         // Act
-        var types = _decorator.GetSupportedTypes();
+        var types = await _decorator.GetSupportedTypes();
 
         // Assert
         types.Should().BeEquivalentTo(expectedTypes);

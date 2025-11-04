@@ -1,11 +1,13 @@
 using Core.Enums;
-using Core.Tests.TestHelpers;
+using Core.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NotificationService.Configurations;
 using NotificationService.Strategies;
+using NotificationService.Validators;
+using NotificationService.UnitTests.TestHelpers;
 
 namespace NotificationService.UnitTests.Strategies;
 
@@ -13,6 +15,7 @@ public class PushNotificationStrategyTests
 {
     private readonly Mock<ILogger<PushNotificationStrategy>> _loggerMock;
     private readonly Mock<IOptions<PushConfig>> _optionsMock;
+    private readonly Mock<PushMessageValidator> _validatorMock;
     private readonly PushNotificationStrategy _strategy;
     private readonly PushConfig _config;
 
@@ -24,11 +27,13 @@ public class PushNotificationStrategyTests
             FcmServerKey = "test-fcm-key",
             ApnsKeyId = "test-apns-key",
             ApnsTeamId = "test-team-id",
-            ApnsAuthKey = "test-auth-key"
+            ApnsBundleId = "test-bundle-id",
+            ApnsPrivateKeyPath = "/path/to/key.p8"
         };
         _optionsMock = new Mock<IOptions<PushConfig>>();
         _optionsMock.Setup(x => x.Value).Returns(_config);
-        _strategy = new PushNotificationStrategy(_loggerMock.Object, _optionsMock.Object);
+        _validatorMock = new Mock<PushMessageValidator>();
+        _strategy = new PushNotificationStrategy(_loggerMock.Object, _optionsMock.Object, _validatorMock.Object);
     }
 
     [Fact]
@@ -55,7 +60,7 @@ public class PushNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeSuccessful();
+        result.Success.Should().BeTrue();
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
@@ -80,8 +85,8 @@ public class PushNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError("Device token is required");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("Device token is required");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -106,8 +111,8 @@ public class PushNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError("Platform is required");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("Platform is required");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -135,8 +140,8 @@ public class PushNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError($"Unsupported platform: {platform}");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("Unsupported platform: windows");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -163,8 +168,8 @@ public class PushNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError("Push notification configuration is incomplete");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("Push notification configuration is incomplete");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,

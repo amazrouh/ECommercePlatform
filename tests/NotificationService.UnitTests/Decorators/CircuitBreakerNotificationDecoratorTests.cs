@@ -1,6 +1,7 @@
 using Core.Enums;
 using Core.Interfaces;
-using Core.Tests.TestHelpers;
+using Core.Models;
+using Core.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -57,7 +58,7 @@ public class CircuitBreakerNotificationDecoratorTests
         for (var i = 0; i < 6; i++) // 5 failures needed to open circuit
         {
             var result = await _decorator.SendAsync(type, message);
-            result.Should().BeFailure();
+            result.Success.Should().BeFalse();
         }
 
         _innerMock.Verify(x => x.SendAsync(type, message, default), Times.Exactly(5));
@@ -119,7 +120,7 @@ public class CircuitBreakerNotificationDecoratorTests
         {
             var results = await _decorator.SendBatchAsync(notifications);
             results.Should().HaveCount(2);
-            results.Values.Should().AllSatisfy(r => r.Should().BeFailure());
+            results.Values.Should().AllSatisfy(r => r.Success.Should().BeFalse());
         }
 
         _innerMock.Verify(x => x.SendBatchAsync(notifications, default), Times.Exactly(5));
@@ -134,15 +135,15 @@ public class CircuitBreakerNotificationDecoratorTests
     }
 
     [Fact]
-    public void GetSupportedTypes_DelegatesCall()
+    public async Task GetSupportedTypes_DelegatesCall()
     {
         // Arrange
         var expectedTypes = new[] { NotificationType.Email, NotificationType.Sms };
         _innerMock.Setup(x => x.GetSupportedTypes())
-            .Returns(expectedTypes);
+            .Returns(Task.FromResult<IEnumerable<NotificationType>>(expectedTypes));
 
         // Act
-        var types = _decorator.GetSupportedTypes();
+        var types = await _decorator.GetSupportedTypes();
 
         // Assert
         types.Should().BeEquivalentTo(expectedTypes);

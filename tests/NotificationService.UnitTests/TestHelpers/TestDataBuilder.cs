@@ -1,7 +1,7 @@
 using Core.Enums;
 using Core.Models;
 
-namespace Core.TestHelpers;
+namespace NotificationService.UnitTests.TestHelpers;
 
 /// <summary>
 /// Builder pattern for creating test data.

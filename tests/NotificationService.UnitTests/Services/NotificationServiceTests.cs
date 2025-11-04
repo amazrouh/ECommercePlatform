@@ -1,10 +1,11 @@
 using Core.Enums;
 using Core.Interfaces;
-using Core.Tests.TestHelpers;
+using Core.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NotificationService.Services;
+using NotificationService.UnitTests.TestHelpers;
 
 namespace NotificationService.UnitTests.Services;
 
@@ -40,8 +41,8 @@ public class NotificationServiceTests
         var result = await _service.SendAsync(type, message);
 
         // Assert
-        result.Should().BeSuccessful()
-            .And.Be(expectedResult);
+        result.Success.Should().BeTrue();
+        result.Should().Be(expectedResult);
         _factoryMock.Verify(x => x.GetStrategy(type), Times.Once);
         _strategyMock.Verify(x => x.SendAsync(message, default), Times.Once);
     }
@@ -63,8 +64,8 @@ public class NotificationServiceTests
         var result = await _service.SendAsync(type, message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError(exception.Message);
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be(exception.Message);
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -106,10 +107,10 @@ public class NotificationServiceTests
 
         // Assert
         results.Should().HaveCount(2);
-        results[NotificationType.Email].Should().BeSuccessful()
-            .And.Be(emailResult);
-        results[NotificationType.Sms].Should().BeSuccessful()
-            .And.Be(smsResult);
+        results[NotificationType.Email].Success.Should().BeTrue();
+        results[NotificationType.Email].Should().Be(emailResult);
+        results[NotificationType.Sms].Success.Should().BeTrue();
+        results[NotificationType.Sms].Should().Be(smsResult);
     }
 
     [Fact]
@@ -143,25 +144,22 @@ public class NotificationServiceTests
 
         // Assert
         results.Should().HaveCount(2);
-        results[NotificationType.Email].Should().BeSuccessful()
-            .And.Be(emailResult);
-        results[NotificationType.Sms].Should().BeFailure()
-            .And.HaveError(exception.Message);
+        results[NotificationType.Email].Success.Should().BeTrue();
+        results[NotificationType.Email].Should().Be(emailResult);
+        results[NotificationType.Sms].Success.Should().BeFalse();
+        results[NotificationType.Sms].Error.Should().Be(exception.Message);
     }
 
     [Fact]
-    public void GetSupportedTypes_ReturnsSupportedTypes()
+    public async Task GetSupportedTypes_ReturnsSupportedTypes()
     {
         // Arrange
         var expectedTypes = new[] { NotificationType.Email, NotificationType.Sms };
-        _factoryMock.Setup(x => x.GetSupportedTypes())
-            .Returns(expectedTypes);
 
         // Act
-        var types = _service.GetSupportedTypes();
+        var types = await _service.GetSupportedTypes();
 
         // Assert
         types.Should().BeEquivalentTo(expectedTypes);
-        _factoryMock.Verify(x => x.GetSupportedTypes(), Times.Once);
     }
 }

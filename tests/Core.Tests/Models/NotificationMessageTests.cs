@@ -1,5 +1,5 @@
 using Core.Models;
-using Core.Tests.TestHelpers;
+using Core.TestHelpers;
 using FluentAssertions;
 
 namespace Core.Tests.Models;

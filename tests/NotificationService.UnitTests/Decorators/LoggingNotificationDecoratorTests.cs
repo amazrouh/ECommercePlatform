@@ -1,10 +1,11 @@
 using Core.Enums;
 using Core.Interfaces;
-using Core.Tests.TestHelpers;
+using Core.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NotificationService.Decorators;
+using NotificationService.UnitTests.TestHelpers;
 
 namespace NotificationService.UnitTests.Decorators;
 
@@ -38,8 +39,7 @@ public class LoggingNotificationDecoratorTests
         // Assert
         actualResult.Should().Be(result);
 
-        var logSequence = new MockSequence();
-        _loggerMock.InSequence(logSequence).Verify(
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -48,7 +48,7 @@ public class LoggingNotificationDecoratorTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
 
-        _loggerMock.InSequence(logSequence).Verify(
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -75,8 +75,7 @@ public class LoggingNotificationDecoratorTests
         // Assert
         actualResult.Should().Be(result);
 
-        var logSequence = new MockSequence();
-        _loggerMock.InSequence(logSequence).Verify(
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -85,7 +84,7 @@ public class LoggingNotificationDecoratorTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
 
-        _loggerMock.InSequence(logSequence).Verify(
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -120,8 +119,7 @@ public class LoggingNotificationDecoratorTests
         // Assert
         actualResults.Should().BeEquivalentTo(results);
 
-        var logSequence = new MockSequence();
-        _loggerMock.InSequence(logSequence).Verify(
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -130,7 +128,7 @@ public class LoggingNotificationDecoratorTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
 
-        _loggerMock.InSequence(logSequence).Verify(
+        _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -141,15 +139,15 @@ public class LoggingNotificationDecoratorTests
     }
 
     [Fact]
-    public void GetSupportedTypes_DelegatesCall()
+    public async Task GetSupportedTypes_DelegatesCall()
     {
         // Arrange
         var expectedTypes = new[] { NotificationType.Email, NotificationType.Sms };
         _innerMock.Setup(x => x.GetSupportedTypes())
-            .Returns(expectedTypes);
+            .Returns(Task.FromResult<IEnumerable<NotificationType>>(expectedTypes));
 
         // Act
-        var types = _decorator.GetSupportedTypes();
+        var types = await _decorator.GetSupportedTypes();
 
         // Assert
         types.Should().BeEquivalentTo(expectedTypes);

@@ -1,4 +1,5 @@
 using Core.Interfaces;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.EntityFrameworkCore;
 using NotificationService.Caching;
 using NotificationService.Configurations;

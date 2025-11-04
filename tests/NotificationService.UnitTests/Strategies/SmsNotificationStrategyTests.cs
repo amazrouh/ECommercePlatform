@@ -1,11 +1,13 @@
 using Core.Enums;
-using Core.Tests.TestHelpers;
+using Core.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NotificationService.Configurations;
 using NotificationService.Strategies;
+using NotificationService.Validators;
+using NotificationService.UnitTests.TestHelpers;
 
 namespace NotificationService.UnitTests.Strategies;
 
@@ -13,6 +15,7 @@ public class SmsNotificationStrategyTests
 {
     private readonly Mock<ILogger<SmsNotificationStrategy>> _loggerMock;
     private readonly Mock<IOptions<SmsConfig>> _optionsMock;
+    private readonly Mock<SmsMessageValidator> _validatorMock;
     private readonly SmsNotificationStrategy _strategy;
     private readonly SmsConfig _config;
 
@@ -23,11 +26,14 @@ public class SmsNotificationStrategyTests
         {
             ApiKey = "test-api-key",
             ApiSecret = "test-api-secret",
-            SenderId = "TEST"
+            FromNumber = "+15551234567"
         };
         _optionsMock = new Mock<IOptions<SmsConfig>>();
         _optionsMock.Setup(x => x.Value).Returns(_config);
-        _strategy = new SmsNotificationStrategy(_loggerMock.Object, _optionsMock.Object);
+        _validatorMock = new Mock<SmsMessageValidator>();
+        _validatorMock.Setup(v => v.Validate(It.IsAny<NotificationMessage>()))
+            .Returns(new FluentValidation.Results.ValidationResult());
+        _strategy = new SmsNotificationStrategy(_loggerMock.Object, _optionsMock.Object, _validatorMock.Object);
     }
 
     [Fact]
@@ -49,7 +55,7 @@ public class SmsNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeSuccessful();
+        result.Success.Should().BeTrue();
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
@@ -73,8 +79,8 @@ public class SmsNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError("Invalid phone number format");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("Invalid phone number format");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -96,8 +102,8 @@ public class SmsNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError("SMS configuration is incomplete");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("SMS configuration is incomplete");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -120,8 +126,8 @@ public class SmsNotificationStrategyTests
         var result = await _strategy.SendAsync(message);
 
         // Assert
-        result.Should().BeFailure()
-            .And.HaveError("Message exceeds maximum length of 1600 characters");
+        result.Success.Should().BeFalse();
+        result.Error.Should().Be("Message exceeds maximum length of 1600 characters");
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,

@@ -23,7 +23,7 @@ public sealed record NotificationResult
     /// <summary>
     /// Gets the timestamp when the notification was sent.
     /// </summary>
-    public DateTimeOffset SentAt { get; }
+    public DateTimeOffset SentAt { get; init; }
 
     private NotificationResult(bool success, string? messageId, string? error)
     {
@@ -40,6 +40,15 @@ public sealed record NotificationResult
     /// <returns>A successful NotificationResult instance.</returns>
     public static NotificationResult Succeeded(string messageId)
         => new(true, messageId, null);
+
+    /// <summary>
+    /// Creates a successful notification result with a specific timestamp.
+    /// </summary>
+    /// <param name="messageId">The unique message identifier from the provider.</param>
+    /// <param name="sentAt">The timestamp when the notification was sent.</param>
+    /// <returns>A successful NotificationResult instance.</returns>
+    public static NotificationResult Succeeded(string messageId, DateTimeOffset sentAt)
+        => new(true, messageId, null) { SentAt = sentAt };
 
     /// <summary>
     /// Creates a failed notification result.
