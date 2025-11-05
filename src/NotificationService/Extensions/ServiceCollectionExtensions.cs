@@ -72,6 +72,13 @@ public static class ServiceCollectionExtensions
         services.Configure<EmailConfig>(configuration.GetSection("Email"));
         services.Configure<SmsConfig>(configuration.GetSection("Sms"));
         services.Configure<PushConfig>(configuration.GetSection("Push"));
+        services.Configure<JwtConfig>(configuration.GetSection("Jwt"));
+        services.Configure<SecurityConfig>(configuration.GetSection("Security"));
+
+        // Add security services
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddHttpContextAccessor();
 
         return services;
     }

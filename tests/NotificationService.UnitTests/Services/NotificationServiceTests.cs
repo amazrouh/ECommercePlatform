@@ -2,6 +2,7 @@ using Core.Enums;
 using Core.Interfaces;
 using Core.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NotificationService.Services;
@@ -14,6 +15,8 @@ public class NotificationServiceTests
     private readonly Mock<INotificationStrategyFactory> _factoryMock;
     private readonly Mock<ILogger<NotificationService.Services.NotificationService>> _loggerMock;
     private readonly Mock<INotificationStrategy> _strategyMock;
+    private readonly Mock<IAuditLogger> _auditLoggerMock;
+    private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
     private readonly NotificationService.Services.NotificationService _service;
 
     public NotificationServiceTests()
@@ -21,7 +24,13 @@ public class NotificationServiceTests
         _factoryMock = new Mock<INotificationStrategyFactory>();
         _loggerMock = new Mock<ILogger<NotificationService.Services.NotificationService>>();
         _strategyMock = new Mock<INotificationStrategy>();
-        _service = new NotificationService.Services.NotificationService(_factoryMock.Object, _loggerMock.Object);
+        _auditLoggerMock = new Mock<IAuditLogger>();
+        _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+        _service = new NotificationService.Services.NotificationService(
+            _factoryMock.Object,
+            _loggerMock.Object,
+            _auditLoggerMock.Object,
+            _httpContextAccessorMock.Object);
     }
 
     [Fact]

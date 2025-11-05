@@ -1,5 +1,6 @@
 using AutoMapper;
 using Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NotificationService.DTOs;
 
@@ -34,6 +35,7 @@ public class NotificationsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result of the notification operation.</returns>
     [HttpPost]
+    [Authorize(Policy = "RequireUser")]
     [ProducesResponseType(typeof(NotificationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
@@ -57,6 +59,7 @@ public class NotificationsController : ControllerBase
     /// </summary>
     /// <returns>List of supported notification types.</returns>
     [HttpGet("types")]
+    [Authorize(Policy = "RequireUser")]
     [ProducesResponseType(typeof(IEnumerable<Core.Enums.NotificationType>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Core.Enums.NotificationType>>> GetNotificationTypes()
     {
@@ -69,6 +72,7 @@ public class NotificationsController : ControllerBase
     /// </summary>
     /// <returns>Health check result.</returns>
     [HttpGet("health")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetHealth()

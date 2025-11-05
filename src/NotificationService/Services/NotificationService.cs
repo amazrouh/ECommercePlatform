@@ -1,7 +1,9 @@
 using Core.Enums;
 using Core.Interfaces;
 using Core.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace NotificationService.Services;
 
@@ -12,13 +14,19 @@ public class NotificationService : INotificationService
 {
     private readonly INotificationStrategyFactory _strategyFactory;
     private readonly ILogger<NotificationService> _logger;
+    private readonly IAuditLogger _auditLogger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public NotificationService(
         INotificationStrategyFactory strategyFactory,
-        ILogger<NotificationService> logger)
+        ILogger<NotificationService> logger,
+        IAuditLogger auditLogger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _strategyFactory = strategyFactory;
         _logger = logger;
+        _auditLogger = auditLogger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <inheritdoc />
@@ -27,6 +35,8 @@ public class NotificationService : INotificationService
         NotificationMessage message,
         CancellationToken cancellationToken = default)
     {
+        var userId = GetCurrentUserId();
+
         try
         {
             _logger.LogInformation("Sending {Type} notification to {Recipient}", type, message.To);
@@ -39,12 +49,18 @@ public class NotificationService : INotificationService
                 _logger.LogInformation(
                     "{Type} notification sent successfully. MessageId: {MessageId}",
                     type, result.MessageId);
+
+                // Audit log successful notification
+                await _auditLogger.LogNotificationSentAsync(message, result, userId);
             }
             else
             {
                 _logger.LogError(
                     "{Type} notification failed. Error: {Error}",
                     type, result.Error);
+
+                // Audit log failed notification
+                await _auditLogger.LogNotificationFailedAsync(message, result.Error ?? "Unknown error", userId);
             }
 
             return result;
@@ -54,6 +70,10 @@ public class NotificationService : INotificationService
             _logger.LogError(ex,
                 "Failed to send {Type} notification to {Recipient}",
                 type, message.To);
+
+            // Audit log failed notification
+            await _auditLogger.LogNotificationFailedAsync(message, ex.Message, userId);
+
             return NotificationResult.Failed(ex.Message);
         }
     }
@@ -78,4 +98,10 @@ public class NotificationService : INotificationService
     /// <inheritdoc />
     public Task<IEnumerable<NotificationType>> GetSupportedTypes()
         => Task.FromResult(NotificationStrategyFactory.GetSupportedTypes());
+
+    private string? GetCurrentUserId()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        return user?.FindFirst(ClaimTypes.Name)?.Value;
+    }
 }
