@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NotificationService.Services;
 using NotificationService.UnitTests.TestHelpers;
+using NotificationService.Models.Dashboard;
 
 namespace NotificationService.UnitTests.Services;
 
@@ -17,6 +18,7 @@ public class NotificationServiceTests
     private readonly Mock<INotificationStrategy> _strategyMock;
     private readonly Mock<IAuditLogger> _auditLoggerMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
+    private readonly Mock<DashboardMetricsService> _metricsServiceMock;
     private readonly NotificationService.Services.NotificationService _service;
 
     public NotificationServiceTests()
@@ -26,11 +28,13 @@ public class NotificationServiceTests
         _strategyMock = new Mock<INotificationStrategy>();
         _auditLoggerMock = new Mock<IAuditLogger>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+        _metricsServiceMock = new Mock<DashboardMetricsService>();
         _service = new NotificationService.Services.NotificationService(
             _factoryMock.Object,
             _loggerMock.Object,
             _auditLoggerMock.Object,
-            _httpContextAccessorMock.Object);
+            _httpContextAccessorMock.Object,
+            _metricsServiceMock.Object);
     }
 
     [Fact]

@@ -16,17 +16,20 @@ public class NotificationService : INotificationService
     private readonly ILogger<NotificationService> _logger;
     private readonly IAuditLogger _auditLogger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly Core.Interfaces.IMetricsRecorder _metricsRecorder;
 
     public NotificationService(
         INotificationStrategyFactory strategyFactory,
         ILogger<NotificationService> logger,
         IAuditLogger auditLogger,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        Core.Interfaces.IMetricsRecorder metricsRecorder)
     {
         _strategyFactory = strategyFactory;
         _logger = logger;
         _auditLogger = auditLogger;
         _httpContextAccessor = httpContextAccessor;
+        _metricsRecorder = metricsRecorder;
     }
 
     /// <inheritdoc />
@@ -36,6 +39,7 @@ public class NotificationService : INotificationService
         CancellationToken cancellationToken = default)
     {
         var userId = GetCurrentUserId();
+        var startTime = DateTimeOffset.UtcNow;
 
         try
         {
@@ -43,12 +47,16 @@ public class NotificationService : INotificationService
 
             var strategy = _strategyFactory.GetStrategy(type);
             var result = await strategy.SendAsync(message, cancellationToken);
+            var responseTime = (DateTimeOffset.UtcNow - startTime).TotalMilliseconds;
 
             if (result.Success)
             {
                 _logger.LogInformation(
                     "{Type} notification sent successfully. MessageId: {MessageId}",
                     type, result.MessageId);
+
+                // Record metrics
+                _metricsRecorder.RecordNotificationEvent(type, true, responseTime, null, userId);
 
                 // Audit log successful notification
                 await _auditLogger.LogNotificationSentAsync(message, result, userId);
@@ -59,6 +67,9 @@ public class NotificationService : INotificationService
                     "{Type} notification failed. Error: {Error}",
                     type, result.Error);
 
+                // Record metrics
+                _metricsRecorder.RecordNotificationEvent(type, false, responseTime, result.Error, userId);
+
                 // Audit log failed notification
                 await _auditLogger.LogNotificationFailedAsync(message, result.Error ?? "Unknown error", userId);
             }
@@ -67,9 +78,14 @@ public class NotificationService : INotificationService
         }
         catch (Exception ex)
         {
+            var responseTime = (DateTimeOffset.UtcNow - startTime).TotalMilliseconds;
+
             _logger.LogError(ex,
                 "Failed to send {Type} notification to {Recipient}",
                 type, message.To);
+
+            // Record metrics
+            _metricsRecorder.RecordNotificationEvent(type, false, responseTime, ex.Message, userId);
 
             // Audit log failed notification
             await _auditLogger.LogNotificationFailedAsync(message, ex.Message, userId);

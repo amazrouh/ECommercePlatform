@@ -80,6 +80,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddHttpContextAccessor();
 
+        // Add dashboard services
+        services.AddSingleton<MessageBatchingService>();
+        services.AddSingleton<Core.Interfaces.IMetricsRecorder, DashboardMetricsService>();
+        services.AddHostedService<DashboardMetricsService>();
+
         return services;
     }
 }
