@@ -3,6 +3,7 @@ using Core.Interfaces;
 using Core.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using NotificationService.Data;
 using System.Security.Claims;
 
 namespace NotificationService.Services;
@@ -17,7 +18,7 @@ public class NotificationService : INotificationService
     private readonly IAuditLogger _auditLogger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly Core.Interfaces.IMetricsRecorder _metricsRecorder;
-    private readonly Data.INotificationRepository _notificationRepository;
+    private readonly INotificationRepository _notificationRepository;
 
     public NotificationService(
         INotificationStrategyFactory strategyFactory,
@@ -25,7 +26,7 @@ public class NotificationService : INotificationService
         IAuditLogger auditLogger,
         IHttpContextAccessor httpContextAccessor,
         Core.Interfaces.IMetricsRecorder metricsRecorder,
-        Data.INotificationRepository notificationRepository)
+        INotificationRepository notificationRepository)
     {
         _strategyFactory = strategyFactory;
         _logger = logger;
