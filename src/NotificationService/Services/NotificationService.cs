@@ -17,19 +17,22 @@ public class NotificationService : INotificationService
     private readonly IAuditLogger _auditLogger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly Core.Interfaces.IMetricsRecorder _metricsRecorder;
+    private readonly Data.INotificationRepository _notificationRepository;
 
     public NotificationService(
         INotificationStrategyFactory strategyFactory,
         ILogger<NotificationService> logger,
         IAuditLogger auditLogger,
         IHttpContextAccessor httpContextAccessor,
-        Core.Interfaces.IMetricsRecorder metricsRecorder)
+        Core.Interfaces.IMetricsRecorder metricsRecorder,
+        Data.INotificationRepository notificationRepository)
     {
         _strategyFactory = strategyFactory;
         _logger = logger;
         _auditLogger = auditLogger;
         _httpContextAccessor = httpContextAccessor;
         _metricsRecorder = metricsRecorder;
+        _notificationRepository = notificationRepository;
     }
 
     /// <inheritdoc />
