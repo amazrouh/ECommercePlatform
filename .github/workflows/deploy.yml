@@ -1,0 +1,312 @@
+name: Deploy NotificationService
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'infra/**'
+      - 'scripts/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run unit tests
+      run: |
+        dotnet test tests/NotificationService.UnitTests/NotificationService.UnitTests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=test-results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./test-results
+
+    - name: Run integration tests
+      run: |
+        dotnet test tests/NotificationService.IntegrationTests/NotificationService.IntegrationTests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=integration-test-results.trx" \
+          --results-directory ./test-results
+
+    - name: Run core tests
+      run: |
+        dotnet test tests/Core.Tests/Core.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=core-test-results.trx" \
+          --results-directory ./test-results
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: ./test-results/
+
+    - name: Generate coverage report
+      uses: dotnet-coverage/convert@v1
+      if: success()
+      with:
+        source: ./test-results/
+        destination: ./coverage/
+        format: cobertura
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: success()
+      with:
+        file: ./coverage/coverage.cobertura.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ secrets.DOCKERHUB_USERNAME }}/notificationservice
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/dotnet@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    environment: staging
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy infrastructure
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP_STAGING }}
+        template: ./infra/main.bicep
+        parameters: >
+          environmentName=staging
+          sqlAdministratorPassword=${{ secrets.SQL_ADMIN_PASSWORD_STAGING }}
+        deploymentMode: Incremental
+
+    - name: Deploy to staging slot
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_APP_NAME_STAGING }}
+        slot-name: staging
+        images: ${{ needs.build-and-test.outputs.image-tag }}
+
+    - name: Run database migrations
+      run: |
+        az webapp deployment script --name ${{ secrets.AZURE_APP_NAME_STAGING }} \
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_STAGING }} \
+          --slot staging \
+          --script-location ./scripts/apply-migrations.ps1
+
+    - name: Run health check
+      run: |
+        sleep 30
+        curl -f ${{ secrets.STAGING_URL }}/health || exit 1
+
+    - name: Swap staging slot to production
+      run: |
+        az webapp deployment slot swap --name ${{ secrets.AZURE_APP_NAME_STAGING }} \
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_STAGING }} \
+          --slot staging
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy infrastructure
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP_PRODUCTION }}
+        template: ./infra/main.bicep
+        parameters: >
+          environmentName=prod
+          sqlAdministratorPassword=${{ secrets.SQL_ADMIN_PASSWORD_PRODUCTION }}
+        deploymentMode: Incremental
+
+    - name: Deploy to production slot
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_APP_NAME_PRODUCTION }}
+        slot-name: staging
+        images: ${{ needs.build-and-test.outputs.image-tag }}
+
+    - name: Run database migrations
+      run: |
+        az webapp deployment script --name ${{ secrets.AZURE_APP_NAME_PRODUCTION }} \
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_PRODUCTION }} \
+          --slot staging \
+          --script-location ./scripts/apply-migrations.ps1
+
+    - name: Run health check
+      run: |
+        sleep 30
+        curl -f ${{ secrets.PRODUCTION_URL }}/health || exit 1
+
+    - name: Swap production slot to production
+      run: |
+        az webapp deployment slot swap --name ${{ secrets.AZURE_APP_NAME_PRODUCTION }} \
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_PRODUCTION }} \
+          --slot staging
+
+    - name: Create GitHub deployment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha,
+            environment: 'production',
+            description: 'Production deployment completed'
+          });
+
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Clean up old Docker images
+      run: |
+        az acr repository show-manifests \
+          --name ${{ secrets.AZURE_CONTAINER_REGISTRY }} \
+          --repository notificationservice \
+          --orderby time_desc \
+          --top 10 \
+          --query "[10:].digest" \
+          -o tsv | xargs -I {} az acr repository delete \
+          --name ${{ secrets.AZURE_CONTAINER_REGISTRY }} \
+          --image notificationservice@{} \
+          --yes

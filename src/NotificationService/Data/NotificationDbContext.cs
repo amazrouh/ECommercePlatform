@@ -29,7 +29,7 @@ public class NotificationDbContext : DbContext
             entity.ToTable("Notifications");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Type).IsRequired();
-            entity.Property(e => e.To).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.To).HasColumnName("ToAddress").IsRequired().HasMaxLength(256);
             entity.Property(e => e.Subject).IsRequired().HasMaxLength(256);
             entity.Property(e => e.Body).IsRequired();
             entity.Property(e => e.Status).IsRequired();

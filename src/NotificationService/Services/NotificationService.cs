@@ -1,8 +1,10 @@
 using Core.Enums;
 using Core.Interfaces;
 using Core.Models;
+using NotificationService.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using NotificationService.Data;
 using System.Security.Claims;
 
 namespace NotificationService.Services;
@@ -17,19 +19,22 @@ public class NotificationService : INotificationService
     private readonly IAuditLogger _auditLogger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly Core.Interfaces.IMetricsRecorder _metricsRecorder;
+    private readonly INotificationRepository _notificationRepository;
 
     public NotificationService(
         INotificationStrategyFactory strategyFactory,
         ILogger<NotificationService> logger,
         IAuditLogger auditLogger,
         IHttpContextAccessor httpContextAccessor,
-        Core.Interfaces.IMetricsRecorder metricsRecorder)
+        Core.Interfaces.IMetricsRecorder metricsRecorder,
+        INotificationRepository notificationRepository)
     {
         _strategyFactory = strategyFactory;
         _logger = logger;
         _auditLogger = auditLogger;
         _httpContextAccessor = httpContextAccessor;
         _metricsRecorder = metricsRecorder;
+        _notificationRepository = notificationRepository;
     }
 
     /// <inheritdoc />
@@ -55,6 +60,9 @@ public class NotificationService : INotificationService
                     "{Type} notification sent successfully. MessageId: {MessageId}",
                     type, result.MessageId);
 
+                // Save notification to database
+                await SaveNotificationToDatabaseAsync(message, type, NotificationStatus.Sent, result.MessageId);
+
                 // Record metrics
                 _metricsRecorder.RecordNotificationEvent(type, true, responseTime, null, userId);
 
@@ -66,6 +74,9 @@ public class NotificationService : INotificationService
                 _logger.LogError(
                     "{Type} notification failed. Error: {Error}",
                     type, result.Error);
+
+                // Save failed notification to database
+                await SaveNotificationToDatabaseAsync(message, type, NotificationStatus.Failed, null, result.Error);
 
                 // Record metrics
                 _metricsRecorder.RecordNotificationEvent(type, false, responseTime, result.Error, userId);
@@ -84,6 +95,16 @@ public class NotificationService : INotificationService
                 "Failed to send {Type} notification to {Recipient}",
                 type, message.To);
 
+            // Save failed notification to database (don't re-throw if this fails)
+            try
+            {
+                await SaveNotificationToDatabaseAsync(message, type, NotificationStatus.Failed, null, ex.Message);
+            }
+            catch (Exception dbEx)
+            {
+                _logger.LogError(dbEx, "Failed to save notification to database after send failure");
+            }
+
             // Record metrics
             _metricsRecorder.RecordNotificationEvent(type, false, responseTime, ex.Message, userId);
 
@@ -91,6 +112,40 @@ public class NotificationService : INotificationService
             await _auditLogger.LogNotificationFailedAsync(message, ex.Message, userId);
 
             return NotificationResult.Failed(ex.Message);
+        }
+    }
+
+    private async Task SaveNotificationToDatabaseAsync(
+        NotificationMessage message,
+        NotificationType type,
+        NotificationStatus status,
+        string? messageId = null,
+        string? error = null)
+    {
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var entity = new NotificationEntity
+            {
+                Type = type,
+                To = message.To,
+                Subject = message.Subject,
+                Body = message.Body,
+                Metadata = message.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+                Status = status,
+                SentAt = status == NotificationStatus.Sent ? now : null,
+                Error = error,
+                UpdatedAt = now
+            };
+
+            await _notificationRepository.AddAsync(entity);
+
+            _logger.LogInformation("Notification saved to database with ID: {Id}", entity.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save notification to database");
+            // Don't throw - we don't want database issues to break notification sending
         }
     }
 

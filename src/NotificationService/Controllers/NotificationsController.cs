@@ -2,6 +2,7 @@ using AutoMapper;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.FeatureManagement;
 using NotificationService.DTOs;
 
 namespace NotificationService.Controllers;
@@ -17,15 +18,18 @@ public class NotificationsController : ControllerBase
     private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
     private readonly ILogger<NotificationsController> _logger;
+    private readonly IFeatureManager _featureManager;
 
     public NotificationsController(
         INotificationService notificationService,
         IMapper mapper,
-        ILogger<NotificationsController> logger)
+        ILogger<NotificationsController> logger,
+        IFeatureManager featureManager)
     {
         _notificationService = notificationService;
         _mapper = mapper;
         _logger = logger;
+        _featureManager = featureManager;
     }
 
     /// <summary>
@@ -46,6 +50,14 @@ public class NotificationsController : ControllerBase
         _logger.LogInformation(
             "Received request to send {Type} notification to {Recipient}",
             request.Type, request.To);
+
+        // Check if the notification type is enabled via feature flags
+        var featureFlagName = $"{request.Type}Notifications";
+        if (!await _featureManager.IsEnabledAsync(featureFlagName))
+        {
+            _logger.LogWarning("Notification type {Type} is disabled via feature flag", request.Type);
+            return BadRequest(new { message = $"Notification type {request.Type} is currently disabled" });
+        }
 
         var message = _mapper.Map<Core.Models.NotificationMessage>(request);
         var result = await _notificationService.SendAsync(request.Type, message, cancellationToken);

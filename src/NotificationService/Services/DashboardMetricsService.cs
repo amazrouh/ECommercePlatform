@@ -3,6 +3,7 @@ using Core.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NotificationService.Data;
 using NotificationService.Hubs;
 using NotificationService.Models.Dashboard;
 using System.Collections.Concurrent;
@@ -34,6 +35,7 @@ public class DashboardMetricsService : BackgroundService, Core.Interfaces.IMetri
     private readonly PerformanceCounter? _cpuCounter;
     private readonly PerformanceCounter? _memoryCounter;
     private DateTimeOffset _lastMetricsUpdate = DateTimeOffset.UtcNow;
+    private bool _historicalDataLoaded = false;
 
     public DashboardMetricsService(
         ILogger<DashboardMetricsService> logger,
@@ -130,9 +132,74 @@ public class DashboardMetricsService : BackgroundService, Core.Interfaces.IMetri
         _messageBatcher.QueueNotificationEvent(notificationEvent);
     }
 
+    private async Task LoadHistoricalDataAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Loading historical notification data for dashboard metrics");
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
+
+            // Load all notifications from the last 24 hours for metrics calculation
+            var yesterday = DateTimeOffset.UtcNow.AddDays(-1);
+            var recentNotifications = await repository.GetByStatusAsync(NotificationStatus.Sent, skip: 0, take: 1000);
+
+            var sentNotifications = recentNotifications.Where(n => n.CreatedAt >= yesterday).ToList();
+
+            _logger.LogInformation("Loaded {Count} recent notifications for metrics calculation", sentNotifications.Count);
+
+            // Group by type and update counters
+            foreach (var notification in sentNotifications)
+            {
+                _notificationCounts.AddOrUpdate(notification.Type.ToString(), 1, (_, count) => count + 1);
+                _successCounts.AddOrUpdate(notification.Type.ToString(), 1, (_, count) => count + 1);
+
+                // Estimate response time since we don't store it (use average)
+                _responseTimes.Add(150.0); // Default estimated response time
+
+                // Update strategy metrics
+                _strategyMetrics.AddOrUpdate(notification.Type,
+                    new StrategyMetrics
+                    {
+                        TotalSent = 1,
+                        TotalSuccessful = 1,
+                        TotalFailed = 0,
+                        AverageResponseTimeMs = 150.0,
+                        IsActive = true
+                    },
+                    (_, existing) => new StrategyMetrics
+                    {
+                        TotalSent = existing.TotalSent + 1,
+                        TotalSuccessful = existing.TotalSuccessful + 1,
+                        TotalFailed = existing.TotalFailed,
+                        AverageResponseTimeMs = (existing.AverageResponseTimeMs * existing.TotalSent + 150.0) / (existing.TotalSent + 1),
+                        IsActive = true
+                    });
+            }
+
+            _logger.LogInformation("Historical data loaded successfully. Email: {EmailCount}, SMS: {SmsCount}, Push: {PushCount}",
+                sentNotifications.Count(n => n.Type == NotificationType.Email),
+                sentNotifications.Count(n => n.Type == NotificationType.Sms),
+                sentNotifications.Count(n => n.Type == NotificationType.Push));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load historical notification data");
+            // Don't throw - we can continue without historical data
+        }
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Dashboard Metrics Service started");
+
+        // Load historical data from database on startup
+        if (!_historicalDataLoaded)
+        {
+            await LoadHistoricalDataAsync();
+            _historicalDataLoaded = true;
+        }
 
         while (!stoppingToken.IsCancellationRequested)
         {

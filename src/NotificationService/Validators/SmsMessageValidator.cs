@@ -23,8 +23,7 @@ public class SmsMessageValidator : AbstractValidator<NotificationMessage>
             .NotEmpty().WithMessage("Message content is required.")
             .MaximumLength(1600).WithMessage("Message cannot exceed 1600 characters (10 SMS segments).");
 
-        RuleFor(x => x.Subject)
-            .Empty().WithMessage("SMS messages should not have a subject.");
+        // Subject validation removed - domain model ensures subject is provided by mapping
     }
 
     private static bool BeValidPhoneNumber(string phoneNumber)

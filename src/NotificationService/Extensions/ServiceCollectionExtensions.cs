@@ -82,8 +82,9 @@ public static class ServiceCollectionExtensions
 
         // Add dashboard services
         services.AddSingleton<MessageBatchingService>();
-        services.AddSingleton<Core.Interfaces.IMetricsRecorder, DashboardMetricsService>();
-        services.AddHostedService<DashboardMetricsService>();
+        services.AddSingleton<DashboardMetricsService>();
+        services.AddSingleton<Core.Interfaces.IMetricsRecorder>(sp => sp.GetRequiredService<DashboardMetricsService>());
+        services.AddHostedService(sp => sp.GetRequiredService<DashboardMetricsService>());
 
         return services;
     }

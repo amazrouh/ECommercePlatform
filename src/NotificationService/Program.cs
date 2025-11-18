@@ -1,6 +1,8 @@
 using Core.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.SignalR;
+using Microsoft.Extensions.Configuration.AzureAppConfiguration;
+using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NotificationService.Configurations;
@@ -139,15 +141,45 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Add dashboard services
-builder.Services.AddSingleton<MessageBatchingService>();
-builder.Services.AddHostedService<DashboardMetricsService>();
-
 // Add notification services with decorators
 builder.Services.AddNotificationServices(builder.Configuration);
-builder.Services.Decorate<INotificationService, LoggingNotificationDecorator>();
-builder.Services.Decorate<INotificationService, RetryNotificationDecorator>();
-builder.Services.Decorate<INotificationService, CircuitBreakerNotificationDecorator>();
+
+// Configure Azure App Configuration (only if enabled)
+var azureAppConfig = builder.Configuration.GetSection("AzureAppConfig").Get<AzureAppConfig>();
+if (azureAppConfig?.Enabled == true && !string.IsNullOrEmpty(azureAppConfig.ConnectionString))
+{
+    builder.Configuration.AddAzureAppConfiguration(options =>
+    {
+        options.Connect(azureAppConfig.ConnectionString)
+               .UseFeatureFlags(featureFlagOptions =>
+               {
+                   featureFlagOptions.CacheExpirationInterval = azureAppConfig.RefreshInterval;
+                   featureFlagOptions.Label = "NotificationService";
+               })
+               .Select(KeyFilter.Any, LabelFilter.Null)
+               .Select(KeyFilter.Any, "NotificationService")
+               .ConfigureRefresh(refreshOptions =>
+               {
+                   refreshOptions.Register(azureAppConfig.SentinelKey, refreshAll: true)
+                               .SetCacheExpiration(azureAppConfig.RefreshInterval);
+               });
+
+        if (azureAppConfig.UseKeyVault)
+        {
+            // Key Vault integration is handled through configuration references
+            // The managed identity is already configured at the service level
+        }
+    });
+}
+
+// Add Azure App Configuration middleware for configuration refresh
+if (azureAppConfig?.Enabled == true)
+{
+    builder.Services.AddAzureAppConfiguration();
+}
+
+// Add feature management
+builder.Services.AddFeatureManagement();
 
 // Add health checks
 builder.Services.AddHealthChecks();
@@ -158,6 +190,12 @@ builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+// Use Azure App Configuration middleware (if enabled) - must be very early in pipeline
+if (azureAppConfig?.Enabled == true)
+{
+    app.UseAzureAppConfiguration();
+}
+
 // Enable Swagger in all environments for testing
 app.UseSwagger();
 app.UseSwaggerUI(options =>
@@ -198,6 +236,98 @@ app.MapGet("/dashboard", async context =>
 {
     context.Response.ContentType = "text/html";
     await context.Response.SendFileAsync("wwwroot/dashboard.html");
+});
+
+// Debug route to test SignalR
+app.MapGet("/debug", async context =>
+{
+    context.Response.ContentType = "text/html";
+    await context.Response.WriteAsync(@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Page</title>
+    <script src='/js/signalr/signalr.min.js'></script>
+</head>
+<body>
+    <h1>SignalR Debug Test</h1>
+    <div id='status'>Initializing...</div>
+    <div id='messages'></div>
+    <button onclick='testConnection()'>Test Connection</button>
+    <script>
+        let connection;
+        const statusDiv = document.getElementById('status');
+        const messagesDiv = document.getElementById('messages');
+
+        function log(message) {
+            console.log('DEBUG:', message);
+            messagesDiv.innerHTML += '<div>' + message + '</div>';
+        }
+
+        function testConnection() {
+            try {
+                log('Starting testConnection()...');
+                statusDiv.textContent = 'Testing SignalR...';
+
+                // Check if signalR is available
+                if (typeof signalR === 'undefined') {
+                    log('ERROR: signalR is undefined!');
+                    statusDiv.textContent = 'SignalR not loaded';
+                    return;
+                }
+
+                log('SignalR available: ' + (typeof signalR !== 'undefined'));
+                log('HubConnectionBuilder: ' + (typeof signalR.HubConnectionBuilder));
+
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/notificationHub')
+                    .withAutomaticReconnect()
+                    .build();
+
+                log('Connection object created');
+
+                connection.on('ReceiveMetrics', (metrics) => {
+                    log('Received metrics: ' + JSON.stringify(metrics, null, 2));
+                });
+
+                connection.onclose((error) => {
+                    log('Connection closed: ' + (error ? error.message : 'No error'));
+                });
+
+                log('Starting connection...');
+                connection.start()
+                    .then(() => {
+                        log('Connection.start() resolved');
+                        statusDiv.textContent = 'Connected!';
+                        log('Connection started successfully');
+                        return connection.invoke('JoinDashboard');
+                    })
+                    .then(() => {
+                        log('Joined dashboard group');
+                    })
+                    .catch(err => {
+                        log('Connection error: ' + err.message);
+                        log('Error type: ' + typeof err);
+                        log('Error stack: ' + (err.stack || 'No stack'));
+                        statusDiv.textContent = 'Connection failed: ' + err.message;
+                    });
+            } catch (globalError) {
+                log('Global error in testConnection: ' + globalError.message);
+                statusDiv.textContent = 'Error: ' + globalError.message;
+            }
+        }
+
+        // Auto-test on load
+        window.onload = function() {
+            log('Window loaded, starting test in 1 second...');
+            setTimeout(testConnection, 1000);
+        };
+
+        // Manual test button
+        log('Page loaded successfully');
+    </script>
+</body>
+</html>");
 });
 
 app.Run();

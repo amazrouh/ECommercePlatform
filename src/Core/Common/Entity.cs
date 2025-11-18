@@ -19,7 +19,7 @@ public abstract class Entity
     /// <summary>
     /// Gets or sets the date and time when the entity was last updated.
     /// </summary>
-    public DateTimeOffset? UpdatedAt { get; protected set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     protected Entity()
     {

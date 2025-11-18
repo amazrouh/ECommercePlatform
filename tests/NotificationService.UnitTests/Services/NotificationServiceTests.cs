@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NotificationService.Data;
 using NotificationService.Services;
 using NotificationService.UnitTests.TestHelpers;
 using NotificationService.Models.Dashboard;
@@ -19,6 +20,7 @@ public class NotificationServiceTests
     private readonly Mock<IAuditLogger> _auditLoggerMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
     private readonly Mock<DashboardMetricsService> _metricsServiceMock;
+    private readonly Mock<INotificationRepository> _notificationRepositoryMock;
     private readonly NotificationService.Services.NotificationService _service;
 
     public NotificationServiceTests()
@@ -29,12 +31,14 @@ public class NotificationServiceTests
         _auditLoggerMock = new Mock<IAuditLogger>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         _metricsServiceMock = new Mock<DashboardMetricsService>();
+        _notificationRepositoryMock = new Mock<NotificationService.Data.INotificationRepository>();
         _service = new NotificationService.Services.NotificationService(
             _factoryMock.Object,
             _loggerMock.Object,
             _auditLoggerMock.Object,
             _httpContextAccessorMock.Object,
-            _metricsServiceMock.Object);
+            _metricsServiceMock.Object,
+            _notificationRepositoryMock.Object);
     }
 
     [Fact]
