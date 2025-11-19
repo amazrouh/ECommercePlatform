@@ -1,0 +1,19 @@
+2025-11-19 13:32:41.216 +02:00 [INF] [ThreadId:1] NBomber 5.4.0 started a new session: 2025-11-19_11.32.13_session_fc81ee60
+2025-11-19 13:32:41.293 +02:00 [INF] [ThreadId:1] NBomber started as single node
+2025-11-19 13:32:41.297 +02:00 [INF] [ThreadId:1] License validation....
+2025-11-19 13:32:41.298 +02:00 [WRN] [ThreadId:1] THIS VERSION IS FREE ONLY FOR PERSONAL USE. You can't use it for an organization.
+2025-11-19 13:32:41.317 +02:00 [INF] [ThreadId:1] Reports folder: C:\Drive_D\Work\Projects\ECommercePlatform\LoadTests\bin\Debug\net9.0\reports\empty session
+2025-11-19 13:32:41.318 +02:00 [INF] [ThreadId:1] Plugins: no plugins were loaded
+2025-11-19 13:32:41.319 +02:00 [INF] [ThreadId:1] Reporting sinks: no reporting sinks were loaded
+2025-11-19 13:32:41.319 +02:00 [INF] [ThreadId:1] Starting init...
+2025-11-19 13:32:41.333 +02:00 [INF] [ThreadId:1] Target scenarios: email_notifications, sms_notifications, push_notifications
+2025-11-19 13:32:41.337 +02:00 [INF] [ThreadId:1] Init finished
+2025-11-19 13:32:41.369 +02:00 [INF] [ThreadId:1] Starting warm up...
+2025-11-19 13:32:41.372 +02:00 [INF] [ThreadId:1] Warm up for scenarios: email_notifications, sms_notifications, push_notifications
+2025-11-19 13:32:41.378 +02:00 [INF] [ThreadId:1] Warm up duration: 00:00:30
+2025-11-19 13:33:12.434 +02:00 [INF] [ThreadId:9] Starting bombing...
+2025-11-19 13:35:42.879 +02:00 [WRN] [ThreadId:55] Stopping test early: Stopping test because of too many fails. Scenario 'email_notifications' contains '5097' fails.
+2025-11-19 13:35:42.886 +02:00 [INF] [ThreadId:56] Waiting on scenarios completion...
+2025-11-19 13:35:46.894 +02:00 [INF] [ThreadId:56] Calculating final statistics...
+2025-11-19 13:35:47.249 +02:00 [INF] [ThreadId:6] Reports saved in folder: C:\Drive_D\Work\Projects\ECommercePlatform\LoadTests\reports\2025-11-19_11.32.13_session_fc81ee60
+2025-11-19 13:35:47.250 +02:00 [WRN] [ThreadId:6] THIS VERSION IS FREE ONLY FOR PERSONAL USE. You can't use it for an organization.

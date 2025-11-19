@@ -1,0 +1,1456 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NotificationService</name>
+    </assembly>
+    <members>
+        <member name="T:NotificationService.Caching.ICacheService">
+            <summary>
+            Provides a two-level caching service (L1: Memory Cache, L2: Distributed Cache).
+            </summary>
+        </member>
+        <member name="M:NotificationService.Caching.ICacheService.GetAsync``1(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets a value from the cache.
+            </summary>
+            <typeparam name="T">The type of the value.</typeparam>
+            <param name="key">The cache key.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <returns>The cached value, or null if not found.</returns>
+        </member>
+        <member name="M:NotificationService.Caching.ICacheService.SetAsync``1(System.String,``0,System.DateTimeOffset,System.Threading.CancellationToken)">
+            <summary>
+            Sets a value in the cache.
+            </summary>
+            <typeparam name="T">The type of the value.</typeparam>
+            <param name="key">The cache key.</param>
+            <param name="value">The value to cache.</param>
+            <param name="absoluteExpiration">The absolute expiration time.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+        </member>
+        <member name="M:NotificationService.Caching.ICacheService.RemoveAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Removes a value from the cache.
+            </summary>
+            <param name="key">The cache key.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+        </member>
+        <member name="T:NotificationService.Caching.TwoLevelCacheService">
+            <summary>
+            Implements a two-level caching strategy using memory cache (L1) and distributed cache (L2).
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.AzureAppConfig">
+            <summary>
+            Configuration settings for Azure App Configuration.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.ConnectionString">
+            <summary>
+            Gets or sets the connection string for Azure App Configuration.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.Enabled">
+            <summary>
+            Gets or sets whether Azure App Configuration is enabled.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.RefreshInterval">
+            <summary>
+            Gets or sets the refresh interval for configuration updates.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.FeatureFlagPrefix">
+            <summary>
+            Gets or sets the prefix for feature flags in Azure App Configuration.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.KeyValueFilters">
+            <summary>
+            Gets or sets the list of key-value filters to use.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.SentinelKey">
+            <summary>
+            Gets or sets the sentinel key for configuration refresh.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.AzureAppConfig.UseKeyVault">
+            <summary>
+            Gets or sets whether to use Azure Key Vault references.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.EmailConfig">
+            <summary>
+            Configuration settings for email notifications.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.EmailConfig.SmtpServer">
+            <summary>
+            Gets or sets the SMTP server address.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.EmailConfig.Port">
+            <summary>
+            Gets or sets the SMTP server port.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.EmailConfig.Username">
+            <summary>
+            Gets or sets the SMTP username.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.EmailConfig.Password">
+            <summary>
+            Gets or sets the SMTP password.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.EmailConfig.FromAddress">
+            <summary>
+            Gets or sets the sender email address.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.EmailConfig.FromName">
+            <summary>
+            Gets or sets the sender display name.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.JwtConfig">
+            <summary>
+            Configuration for JWT token settings
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.JwtConfig.Secret">
+            <summary>
+            JWT secret key used for signing tokens
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.JwtConfig.Issuer">
+            <summary>
+            JWT issuer (who issued the token)
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.JwtConfig.Audience">
+            <summary>
+            JWT audience (who the token is intended for)
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.JwtConfig.ExpirationMinutes">
+            <summary>
+            Token expiration time in minutes
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.MessagePackConfig">
+            <summary>
+            Configuration for MessagePack serialization
+            </summary>
+        </member>
+        <member name="M:NotificationService.Configurations.MessagePackConfig.ConfigureMessagePack">
+            <summary>
+            Configures MessagePack resolvers for optimal performance
+            </summary>
+        </member>
+        <member name="M:NotificationService.Configurations.MessagePackConfig.GetDashboardOptions">
+            <summary>
+            Gets MessagePack options optimized for dashboard data
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.MessagePackExtensions">
+            <summary>
+            Extension methods for MessagePack serialization
+            </summary>
+        </member>
+        <member name="M:NotificationService.Configurations.MessagePackExtensions.ToMessagePackBytes``1(``0)">
+            <summary>
+            Serializes an object to MessagePack bytes
+            </summary>
+        </member>
+        <member name="M:NotificationService.Configurations.MessagePackExtensions.FromMessagePackBytes``1(System.Byte[])">
+            <summary>
+            Deserializes MessagePack bytes to an object
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.PushConfig">
+            <summary>
+            Configuration settings for push notifications.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.FcmServerKey">
+            <summary>
+            Gets or sets the Firebase Cloud Messaging server key.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.ApnsKeyId">
+            <summary>
+            Gets or sets the Apple Push Notification Service key ID.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.ApnsTeamId">
+            <summary>
+            Gets or sets the Apple Push Notification Service team ID.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.ApnsBundleId">
+            <summary>
+            Gets or sets the Apple Push Notification Service bundle ID.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.ApnsPrivateKeyPath">
+            <summary>
+            Gets or sets the path to the Apple Push Notification Service private key.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.DefaultTtl">
+            <summary>
+            Gets or sets the default time-to-live for push notifications (in seconds).
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.PushConfig.MaxPayloadSize">
+            <summary>
+            Gets or sets the maximum payload size in bytes.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.SecurityConfig">
+            <summary>
+            Configuration for security settings
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SecurityConfig.RateLimit">
+            <summary>
+            Rate limiting configuration
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SecurityConfig.SecurityHeaders">
+            <summary>
+            Security headers configuration
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.RateLimitConfig">
+            <summary>
+            Rate limiting configuration
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.RateLimitConfig.PermitLimit">
+            <summary>
+            Maximum number of requests per time window
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.RateLimitConfig.WindowSeconds">
+            <summary>
+            Time window in seconds for rate limiting
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.SecurityHeadersConfig">
+            <summary>
+            Security headers configuration
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SecurityHeadersConfig.ContentTypeOptions">
+            <summary>
+            X-Content-Type-Options header value
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SecurityHeadersConfig.FrameOptions">
+            <summary>
+            X-Frame-Options header value
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SecurityHeadersConfig.ReferrerPolicy">
+            <summary>
+            Referrer-Policy header value
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SecurityHeadersConfig.ContentSecurityPolicy">
+            <summary>
+            Content-Security-Policy header value
+            </summary>
+        </member>
+        <member name="T:NotificationService.Configurations.SmsConfig">
+            <summary>
+            Configuration settings for SMS notifications.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SmsConfig.ApiKey">
+            <summary>
+            Gets or sets the SMS API key.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SmsConfig.ApiSecret">
+            <summary>
+            Gets or sets the SMS API secret.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SmsConfig.FromNumber">
+            <summary>
+            Gets or sets the sender phone number.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SmsConfig.MessageLengthLimit">
+            <summary>
+            Gets or sets the maximum message length.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SmsConfig.MaxMessageLength">
+            <summary>
+            Gets or sets the maximum message length (alias for MessageLengthLimit).
+            </summary>
+        </member>
+        <member name="P:NotificationService.Configurations.SmsConfig.SplitLongMessages">
+            <summary>
+            Gets or sets whether to split long messages into multiple SMS.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Controllers.AuthController">
+            <summary>
+            Controller for authentication operations
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.AuthController.Login(NotificationService.DTOs.LoginRequest)">
+            <summary>
+            Authenticates a user and returns a JWT token
+            </summary>
+            <param name="request">The login request containing username and password</param>
+            <returns>A JWT token if authentication is successful</returns>
+            <response code="200">Returns the JWT token</response>
+            <response code="401">If authentication fails</response>
+        </member>
+        <member name="T:NotificationService.Controllers.DashboardController">
+            <summary>
+            Controller for dashboard data and historical metrics
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetCurrentMetrics">
+            <summary>
+            Get current real-time metrics
+            </summary>
+            <returns>Current dashboard metrics</returns>
+            <response code="200">Returns current metrics</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetStrategyMetrics(Core.Enums.NotificationType)">
+            <summary>
+            Get strategy-specific metrics
+            </summary>
+            <param name="type">Notification type to get metrics for</param>
+            <returns>Strategy metrics for the specified type</returns>
+            <response code="200">Returns strategy metrics</response>
+            <response code="404">If strategy type not found</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetAllStrategyMetrics">
+            <summary>
+            Get all strategy metrics
+            </summary>
+            <returns>Dictionary of all strategy metrics</returns>
+            <response code="200">Returns all strategy metrics</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetActiveConnections">
+            <summary>
+            Get active dashboard connections
+            </summary>
+            <returns>List of active dashboard connections</returns>
+            <response code="200">Returns active connections</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetConnectionCount">
+            <summary>
+            Get connection count
+            </summary>
+            <returns>Current connection count</returns>
+            <response code="200">Returns connection count</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetSystemHealth">
+            <summary>
+            Get system health overview
+            </summary>
+            <returns>System health information</returns>
+            <response code="200">Returns system health</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.ResetMetrics">
+            <summary>
+            Reset metrics counters (admin only)
+            </summary>
+            <returns>Success message</returns>
+            <response code="200">Metrics reset successfully</response>
+            <response code="403">Forbidden if not admin</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetHistoricalMetrics(System.DateTimeOffset,System.DateTimeOffset,System.Int32)">
+            <summary>
+            Get historical metrics for a time range
+            </summary>
+            <param name="startTime">Start time for historical data</param>
+            <param name="endTime">End time for historical data</param>
+            <param name="intervalMinutes">Interval in minutes for data aggregation</param>
+            <returns>Historical metrics data</returns>
+            <response code="200">Returns historical metrics</response>
+            <response code="400">If time range is invalid</response>
+        </member>
+        <member name="M:NotificationService.Controllers.DashboardController.GetDashboardSummary">
+            <summary>
+            Get dashboard summary statistics
+            </summary>
+            <returns>Dashboard summary</returns>
+            <response code="200">Returns dashboard summary</response>
+        </member>
+        <member name="T:NotificationService.Controllers.DemoController">
+            <summary>
+            Comprehensive demo controller showcasing all implemented features
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateStrategyPattern">
+            <summary>
+            Category 1: Demonstrate Strategy Pattern - Test all notification strategies
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateFactoryPattern">
+            <summary>
+            Category 1: Demonstrate Factory Pattern - Create multiple strategies
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateDecoratorPattern">
+            <summary>
+            Category 1: Demonstrate Decorator Pattern - Show layered decorators
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateCaching">
+            <summary>
+            Category 2: Demonstrate Performance Optimizations - Caching
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateAsyncPerformance">
+            <summary>
+            Category 2: Demonstrate Async Performance - Concurrent operations
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateMessageBatching">
+            <summary>
+            Category 2: Demonstrate Message Batching
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:NotificationService.Controllers.DemoController.DemonstrateSecurity" -->
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateRateLimiting">
+            <summary>
+            Category 4: Demonstrate Rate Limiting (will be limited if called too frequently)
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateHealthChecks">
+            <summary>
+            Category 5: Demonstrate DevOps Features - Comprehensive Health Checks
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateMonitoring">
+            <summary>
+            Category 5: Demonstrate Monitoring - Application Insights Integration
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateRealTimeDashboard">
+            <summary>
+            Category 6: Demonstrate Real-time Dashboard - Live Metrics via SignalR
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.DemonstrateSignalRGroups">
+            <summary>
+            Category 6: Demonstrate SignalR Group Management
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.RunMasterDemo">
+            <summary>
+            Master Demo: Run all demonstrations in sequence
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.DemoController.GetDemoScenarios">
+            <summary>
+            Get demo scenarios and their descriptions
+            </summary>
+        </member>
+        <member name="T:NotificationService.Controllers.NotificationsController">
+            <summary>
+            Controller for managing notifications.
+            </summary>
+        </member>
+        <member name="M:NotificationService.Controllers.NotificationsController.SendNotification(NotificationService.DTOs.SendNotificationRequest,System.Threading.CancellationToken)">
+            <summary>
+            Sends a notification.
+            </summary>
+            <param name="request">The notification request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The result of the notification operation.</returns>
+        </member>
+        <member name="M:NotificationService.Controllers.NotificationsController.GetNotificationTypes">
+            <summary>
+            Gets all supported notification types.
+            </summary>
+            <returns>List of supported notification types.</returns>
+        </member>
+        <member name="M:NotificationService.Controllers.NotificationsController.GetHealth">
+            <summary>
+            Gets the health status of the notification service.
+            </summary>
+            <returns>Health check result.</returns>
+        </member>
+        <member name="T:NotificationService.Data.INotificationRepository">
+            <summary>
+            Repository interface for notification operations.
+            </summary>
+        </member>
+        <member name="M:NotificationService.Data.INotificationRepository.GetByIdAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a notification by its ID.
+            </summary>
+            <param name="id">The notification ID.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <returns>The notification entity, or null if not found.</returns>
+        </member>
+        <member name="M:NotificationService.Data.INotificationRepository.GetByStatusAsync(Core.Enums.NotificationStatus,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Gets notifications by their status.
+            </summary>
+            <param name="status">The notification status to filter by.</param>
+            <param name="skip">The number of records to skip.</param>
+            <param name="take">The number of records to take.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <returns>A list of notification entities.</returns>
+        </member>
+        <member name="M:NotificationService.Data.INotificationRepository.GetByRecipientAsync(System.String,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Gets notifications for a specific recipient.
+            </summary>
+            <param name="recipient">The recipient's address.</param>
+            <param name="skip">The number of records to skip.</param>
+            <param name="take">The number of records to take.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <returns>A list of notification entities.</returns>
+        </member>
+        <member name="M:NotificationService.Data.INotificationRepository.GetByTypeAsync(Core.Enums.NotificationType,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Gets notifications by type.
+            </summary>
+            <param name="type">The notification type to filter by.</param>
+            <param name="skip">The number of records to skip.</param>
+            <param name="take">The number of records to take.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+            <returns>A list of notification entities.</returns>
+        </member>
+        <member name="M:NotificationService.Data.INotificationRepository.AddAsync(NotificationService.Data.NotificationEntity,System.Threading.CancellationToken)">
+            <summary>
+            Adds a new notification.
+            </summary>
+            <param name="notification">The notification to add.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+        </member>
+        <member name="M:NotificationService.Data.INotificationRepository.UpdateAsync(NotificationService.Data.NotificationEntity,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing notification.
+            </summary>
+            <param name="notification">The notification to update.</param>
+            <param name="cancellationToken">The cancellation token.</param>
+        </member>
+        <member name="T:NotificationService.Data.NotificationDbContext">
+            <summary>
+            Entity Framework Core DbContext for the notification service.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationDbContext.Notifications">
+            <summary>
+            Gets or sets the notifications DbSet.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Data.NotificationEntity">
+            <summary>
+            Represents a notification entity in the database.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.Type">
+            <summary>
+            Gets or sets the type of notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.To">
+            <summary>
+            Gets or sets the recipient of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.Subject">
+            <summary>
+            Gets or sets the subject of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.Body">
+            <summary>
+            Gets or sets the body content of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.Metadata">
+            <summary>
+            Gets or sets the metadata associated with the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.Status">
+            <summary>
+            Gets or sets the status of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.SentAt">
+            <summary>
+            Gets or sets when the notification was sent.
+            </summary>
+        </member>
+        <member name="P:NotificationService.Data.NotificationEntity.Error">
+            <summary>
+            Gets or sets any error message if the notification failed.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Data.NotificationRepository">
+            <summary>
+            Repository implementation for notification operations.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Decorators.CachingNotificationDecorator">
+            <summary>
+            Decorator that adds caching capabilities to the notification service.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Decorators.CircuitBreakerNotificationDecorator">
+            <summary>
+            Decorator that adds circuit breaker capability to notification operations.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Decorators.LoggingNotificationDecorator">
+            <summary>
+            Decorator that adds logging to notification operations.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Decorators.RetryNotificationDecorator">
+            <summary>
+            Decorator that adds retry capability to notification operations.
+            </summary>
+        </member>
+        <member name="T:NotificationService.DTOs.LoginRequest">
+            <summary>
+            Request model for user login
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.LoginRequest.Username">
+            <summary>
+            The username for authentication
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.LoginRequest.Password">
+            <summary>
+            The password for authentication
+            </summary>
+        </member>
+        <member name="T:NotificationService.DTOs.LoginResponse">
+            <summary>
+            Response model for successful login
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.LoginResponse.Token">
+            <summary>
+            The JWT access token
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.LoginResponse.ExpiresIn">
+            <summary>
+            Token expiration time in seconds
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.LoginResponse.TokenType">
+            <summary>
+            The type of token (Bearer)
+            </summary>
+        </member>
+        <member name="T:NotificationService.DTOs.NotificationResponse">
+            <summary>
+            Response DTO for notification operations.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.NotificationResponse.Success">
+            <summary>
+            Gets or sets whether the notification was successful.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.NotificationResponse.MessageId">
+            <summary>
+            Gets or sets the unique message identifier.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.NotificationResponse.Error">
+            <summary>
+            Gets or sets the error message if the notification failed.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.NotificationResponse.SentAt">
+            <summary>
+            Gets or sets the timestamp when the notification was sent.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.NotificationResponse.Type">
+            <summary>
+            Gets or sets the type of notification that was sent.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.NotificationResponse.Recipient">
+            <summary>
+            Gets or sets the recipient of the notification.
+            </summary>
+        </member>
+        <member name="T:NotificationService.DTOs.SendNotificationRequest">
+            <summary>
+            Request DTO for sending a notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.SendNotificationRequest.Type">
+            <summary>
+            Gets or sets the type of notification to send.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.SendNotificationRequest.To">
+            <summary>
+            Gets or sets the recipient of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.SendNotificationRequest.Subject">
+            <summary>
+            Gets or sets the subject of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.SendNotificationRequest.Body">
+            <summary>
+            Gets or sets the body content of the notification.
+            </summary>
+        </member>
+        <member name="P:NotificationService.DTOs.SendNotificationRequest.Metadata">
+            <summary>
+            Gets or sets additional metadata for the notification.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Extensions.ServiceCollectionExtensions">
+            <summary>
+            Extension methods for service collection configuration.
+            </summary>
+        </member>
+        <member name="M:NotificationService.Extensions.ServiceCollectionExtensions.AddNotificationServices(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Adds notification services to the service collection.
+            </summary>
+            <param name="services">The service collection.</param>
+            <param name="configuration">The configuration.</param>
+            <returns>The service collection.</returns>
+        </member>
+        <member name="T:NotificationService.HealthChecks.NotificationHealthCheck">
+            <summary>
+            Health check for the notification service.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Hubs.NotificationHub">
+            <summary>
+            SignalR hub for real-time notification dashboard communication
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.OnConnectedAsync">
+            <summary>
+            Called when a client connects to the hub
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.OnDisconnectedAsync(System.Exception)">
+            <summary>
+            Called when a client disconnects from the hub
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.JoinDashboard">
+            <summary>
+            Join the dashboard group for receiving real-time updates
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.LeaveDashboard">
+            <summary>
+            Leave the dashboard group
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.SendMetrics(NotificationService.Models.Dashboard.DashboardMetrics)">
+            <summary>
+            Send metrics to dashboard clients (admin only)
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.RequestMetrics">
+            <summary>
+            Request current system metrics
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.SendNotificationEvent(NotificationService.Models.Dashboard.NotificationEvent)">
+            <summary>
+            Send a notification event to dashboard clients
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.SendHealthEvent(NotificationService.Models.Dashboard.HealthEvent)">
+            <summary>
+            Send a health event to dashboard clients
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.GetActiveConnections">
+            <summary>
+            Get current dashboard connection information
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHub.GetConnectionCount">
+            <summary>
+            Get connection count
+            </summary>
+        </member>
+        <member name="T:NotificationService.Hubs.NotificationHubExtensions">
+            <summary>
+            Extension methods for NotificationHub
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHubExtensions.SendMetricsToDashboard(Microsoft.AspNetCore.SignalR.IHubContext{NotificationService.Hubs.NotificationHub},NotificationService.Models.Dashboard.DashboardMetrics)">
+            <summary>
+            Send metrics update to all dashboard clients
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHubExtensions.SendUpdateToDashboard(Microsoft.AspNetCore.SignalR.IHubContext{NotificationService.Hubs.NotificationHub},NotificationService.Models.Dashboard.RealTimeUpdate)">
+            <summary>
+            Send real-time update to all dashboard clients
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHubExtensions.SendNotificationEventToDashboard(Microsoft.AspNetCore.SignalR.IHubContext{NotificationService.Hubs.NotificationHub},NotificationService.Models.Dashboard.NotificationEvent)">
+            <summary>
+            Send notification event to dashboard clients
+            </summary>
+        </member>
+        <member name="M:NotificationService.Hubs.NotificationHubExtensions.SendHealthEventToDashboard(Microsoft.AspNetCore.SignalR.IHubContext{NotificationService.Hubs.NotificationHub},NotificationService.Models.Dashboard.HealthEvent)">
+            <summary>
+            Send health event to dashboard clients
+            </summary>
+        </member>
+        <member name="T:NotificationService.Mapping.NotificationProfile">
+            <summary>
+            AutoMapper profile for notification-related mappings.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Middleware.ExceptionHandlingMiddleware">
+            <summary>
+            Middleware for handling exceptions globally.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Middleware.RequestLoggingMiddleware">
+            <summary>
+            Middleware for logging HTTP requests and responses.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Middleware.SecurityHeadersMiddleware">
+            <summary>
+            Middleware for adding security headers to HTTP responses
+            </summary>
+        </member>
+        <member name="M:NotificationService.Middleware.SecurityHeadersMiddleware.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Processes the HTTP request and adds security headers to the response
+            </summary>
+        </member>
+        <member name="T:NotificationService.Middleware.SecurityHeadersMiddlewareExtensions">
+            <summary>
+            Extension methods for adding security headers middleware
+            </summary>
+        </member>
+        <member name="M:NotificationService.Middleware.SecurityHeadersMiddlewareExtensions.UseSecurityHeaders(Microsoft.AspNetCore.Builder.IApplicationBuilder)">
+            <summary>
+            Adds the security headers middleware to the request pipeline
+            </summary>
+        </member>
+        <member name="T:NotificationService.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:NotificationService.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:NotificationService.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:NotificationService.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.DashboardMetrics">
+            <summary>
+            Real-time dashboard metrics
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.Timestamp">
+            <summary>
+            Timestamp of the metrics
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.NotificationsPerMinute">
+            <summary>
+            Total notifications sent in the last minute
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.SuccessRate">
+            <summary>
+            Success rate percentage (0-100)
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.AverageResponseTimeMs">
+            <summary>
+            Average response time in milliseconds
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.ActiveConnections">
+            <summary>
+            Current active connections
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.ActiveStrategies">
+            <summary>
+            Current active strategies count
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.MemoryUsageMB">
+            <summary>
+            Memory usage in MB
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.CpuUsagePercent">
+            <summary>
+            CPU usage percentage
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.StrategyMetrics">
+            <summary>
+            Strategy-specific metrics
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.DashboardMetrics.RecentErrors">
+            <summary>
+            Recent errors (last 10)
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.StrategyMetrics">
+            <summary>
+            Strategy-specific performance metrics
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.StrategyMetrics.TotalSent">
+            <summary>
+            Number of notifications sent by this strategy
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.StrategyMetrics.TotalSuccessful">
+            <summary>
+            Number of successful notifications
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.StrategyMetrics.TotalFailed">
+            <summary>
+            Number of failed notifications
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.StrategyMetrics.AverageResponseTimeMs">
+            <summary>
+            Average response time for this strategy
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.StrategyMetrics.SuccessRate">
+            <summary>
+            Success rate for this strategy (0-100)
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.StrategyMetrics.IsActive">
+            <summary>
+            Is this strategy currently active
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.RealTimeUpdate">
+            <summary>
+            Real-time update message
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.RealTimeUpdate.Type">
+            <summary>
+            Type of update
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.RealTimeUpdate.Metrics">
+            <summary>
+            Current metrics data
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.RealTimeUpdate.NotificationEvent">
+            <summary>
+            Notification event data
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.RealTimeUpdate.HealthEvent">
+            <summary>
+            System health event data
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.UpdateType">
+            <summary>
+            Type of real-time update
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.NotificationEvent">
+            <summary>
+            Notification event data
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.NotificationEvent.Timestamp">
+            <summary>
+            Event timestamp
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.NotificationEvent.Type">
+            <summary>
+            Notification type
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.NotificationEvent.Success">
+            <summary>
+            Was the notification successful
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.NotificationEvent.ResponseTimeMs">
+            <summary>
+            Response time in milliseconds
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.NotificationEvent.ErrorMessage">
+            <summary>
+            Error message if failed
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.NotificationEvent.UserId">
+            <summary>
+            User ID who initiated the notification
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.HealthEvent">
+            <summary>
+            System health event data
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HealthEvent.Timestamp">
+            <summary>
+            Event timestamp
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HealthEvent.Status">
+            <summary>
+            Health status
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HealthEvent.CheckName">
+            <summary>
+            Health check name
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HealthEvent.Description">
+            <summary>
+            Health check description
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HealthEvent.Data">
+            <summary>
+            Additional health data
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.HealthStatus">
+            <summary>
+            Health status enumeration
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.HistoricalMetrics">
+            <summary>
+            Historical metrics data point
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HistoricalMetrics.Timestamp">
+            <summary>
+            Timestamp of the data point
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HistoricalMetrics.NotificationsSent">
+            <summary>
+            Notifications sent in this time period
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HistoricalMetrics.SuccessRate">
+            <summary>
+            Success rate for this time period
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HistoricalMetrics.AverageResponseTimeMs">
+            <summary>
+            Average response time
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.HistoricalMetrics.PeakConnections">
+            <summary>
+            Peak concurrent connections
+            </summary>
+        </member>
+        <member name="T:NotificationService.Models.Dashboard.ConnectionInfo">
+            <summary>
+            Dashboard connection information
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.ConnectionInfo.ConnectionId">
+            <summary>
+            Connection ID
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.ConnectionInfo.UserId">
+            <summary>
+            User ID (if authenticated)
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.ConnectionInfo.ConnectedAt">
+            <summary>
+            Connection start time
+            </summary>
+        </member>
+        <member name="P:NotificationService.Models.Dashboard.ConnectionInfo.ClientType">
+            <summary>
+            Client type (dashboard, api, etc.)
+            </summary>
+        </member>
+        <member name="T:NotificationService.Security.RateLimitingSetup">
+            <summary>
+            Setup class for configuring rate limiting
+            </summary>
+        </member>
+        <member name="M:NotificationService.Security.RateLimitingSetup.AddCustomRateLimiting(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Configures rate limiting for the application
+            </summary>
+        </member>
+        <member name="T:NotificationService.Services.AuditLogger">
+            <summary>
+            Implementation of audit logging for security and notification events
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.AuditLogger.LogNotificationSentAsync(Core.Models.NotificationMessage,Core.Models.NotificationResult,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuditLogger.LogNotificationFailedAsync(Core.Models.NotificationMessage,System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuditLogger.LogAuthenticationFailureAsync(System.String,System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuditLogger.LogAuthenticationSuccessAsync(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuditLogger.LogAuthorizationFailureAsync(System.String,System.String,System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuditLogger.LogSecurityEventAsync(System.String,System.String,System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <inheritdoc/>
+        </member>
+        <member name="T:NotificationService.Services.AuthService">
+            <summary>
+            Implementation of authentication service using JWT tokens
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.AuthService.AuthenticateAsync(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuthService.ValidateCredentialsAsync(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:NotificationService.Services.AuthService.GetUserRoleAsync(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="T:NotificationService.Services.DashboardMetricsService">
+            <summary>
+            Background service for collecting and broadcasting real-time dashboard metrics
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.DashboardMetricsService.RecordNotificationEvent(Core.Enums.NotificationType,System.Boolean,System.Double,System.String,System.String)">
+            <summary>
+            Record a notification event for metrics collection
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.DashboardMetricsService.GetCurrentMetrics">
+            <summary>
+            Get current metrics snapshot
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.DashboardMetricsService.GetStrategyMetrics(Core.Enums.NotificationType)">
+            <summary>
+            Get strategy metrics for a specific type
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.DashboardMetricsService.ResetMetrics">
+            <summary>
+            Reset all metrics (useful for testing or manual reset)
+            </summary>
+        </member>
+        <member name="T:NotificationService.Services.GracefulShutdownService">
+            <summary>
+            Service for handling graceful shutdown of the application
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.StartAsync(System.Threading.CancellationToken)">
+            <summary>
+            Start the graceful shutdown service
+            </summary>
+            <param name="cancellationToken"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.StopAsync(System.Threading.CancellationToken)">
+            <summary>
+            Stop the graceful shutdown service
+            </summary>
+            <param name="cancellationToken"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.HandleShutdownAsync">
+            <summary>
+            Handle graceful shutdown process
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.SaveFinalMetricsAsync(NotificationService.Models.Dashboard.DashboardMetrics)">
+            <summary>
+            Save final metrics before shutdown
+            </summary>
+            <param name="metrics"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.CompleteOngoingRequestsAsync(System.TimeSpan)">
+            <summary>
+            Complete ongoing requests before shutdown
+            </summary>
+            <param name="timeout"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.CloseDatabaseConnectionsAsync">
+            <summary>
+            Close database connections gracefully
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.CloseCacheConnectionsAsync">
+            <summary>
+            Close cache connections gracefully
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.GracefulShutdownService.Dispose">
+            <summary>
+            Dispose resources
+            </summary>
+        </member>
+        <member name="T:NotificationService.Services.MessageBatchingService">
+            <summary>
+            Service for batching and optimizing SignalR messages
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.MessageBatchingService.QueueMessage(NotificationService.Models.Dashboard.RealTimeUpdate)">
+            <summary>
+            Queues a message for batched sending
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.MessageBatchingService.SendImmediateAsync(NotificationService.Models.Dashboard.RealTimeUpdate)">
+            <summary>
+            Sends a message immediately without batching
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.MessageBatchingService.FlushBatchAsync">
+            <summary>
+            Forces processing of current batch
+            </summary>
+        </member>
+        <member name="T:NotificationService.Services.MessageBatchingExtensions">
+            <summary>
+            Extension methods for message batching
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.MessageBatchingExtensions.QueueMetricsUpdate(NotificationService.Services.MessageBatchingService,NotificationService.Models.Dashboard.DashboardMetrics)">
+            <summary>
+            Queues a metrics update for batched sending
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.MessageBatchingExtensions.QueueNotificationEvent(NotificationService.Services.MessageBatchingService,NotificationService.Models.Dashboard.NotificationEvent)">
+            <summary>
+            Queues a notification event for batched sending
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.MessageBatchingExtensions.QueueHealthEvent(NotificationService.Services.MessageBatchingService,NotificationService.Models.Dashboard.HealthEvent)">
+            <summary>
+            Queues a health event for batched sending
+            </summary>
+        </member>
+        <member name="T:NotificationService.Services.NotificationService">
+            <summary>
+            Service for sending notifications using appropriate strategies.
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.NotificationService.SendAsync(Core.Enums.NotificationType,Core.Models.NotificationMessage,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:NotificationService.Services.NotificationService.SendBatchAsync(System.Collections.Generic.IDictionary{Core.Enums.NotificationType,Core.Models.NotificationMessage},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:NotificationService.Services.NotificationService.GetSupportedTypes">
+            <inheritdoc />
+        </member>
+        <member name="T:NotificationService.Services.NotificationStrategyFactory">
+            <summary>
+            Factory for creating notification strategy instances.
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.NotificationStrategyFactory.GetStrategy(Core.Enums.NotificationType)">
+            <inheritdoc />
+        </member>
+        <member name="M:NotificationService.Services.NotificationStrategyFactory.GetSupportedTypes">
+            <summary>
+            Gets all supported notification types.
+            </summary>
+            <returns>An enumerable of supported notification types.</returns>
+        </member>
+        <member name="T:NotificationService.Services.StartupValidationService">
+            <summary>
+            Service for validating application startup requirements
+            </summary>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateStartupAsync">
+            <summary>
+            Validate all startup requirements
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateConfiguration(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Validate configuration settings
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateDatabaseConnection(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Validate database connection
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateRedisConnection(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Validate Redis connection
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateExternalServices(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Validate external services
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateSecurityConfiguration(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Validate security configuration
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.ValidateFeatureFlags(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Validate feature flags configuration
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NotificationService.Services.StartupValidationService.LogValidationResults(NotificationService.Services.StartupValidationResult)">
+            <summary>
+            Log validation results
+            </summary>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="T:NotificationService.Services.StartupValidationResult">
+            <summary>
+            Result of startup validation
+            </summary>
+        </member>
+        <member name="T:NotificationService.Services.ValidationCheck">
+            <summary>
+            Individual validation check result
+            </summary>
+        </member>
+        <member name="T:NotificationService.Strategies.EmailNotificationStrategy">
+            <summary>
+            Strategy for sending email notifications.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Strategies.PushNotificationStrategy">
+            <summary>
+            Strategy for sending push notifications.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Strategies.SmsNotificationStrategy">
+            <summary>
+            Strategy for sending SMS notifications.
+            </summary>
+        </member>
+        <member name="T:NotificationService.SwaggerExamples.LoginRequestExample">
+            <summary>
+            Swagger examples for LoginRequest
+            </summary>
+        </member>
+        <member name="M:NotificationService.SwaggerExamples.LoginRequestExample.GetExamples">
+            <summary>
+            Get examples for LoginRequest
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:NotificationService.SwaggerExamples.LoginResponseExample">
+            <summary>
+            Swagger examples for LoginResponse
+            </summary>
+        </member>
+        <member name="M:NotificationService.SwaggerExamples.LoginResponseExample.GetExamples">
+            <summary>
+            Get examples for LoginResponse
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:NotificationService.SwaggerExamples.NotificationResponseExample">
+            <summary>
+            Swagger examples for NotificationResponse
+            </summary>
+        </member>
+        <member name="M:NotificationService.SwaggerExamples.NotificationResponseExample.GetExamples">
+            <summary>
+            Get multiple examples for NotificationResponse
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:NotificationService.SwaggerExamples.SendNotificationRequestExample">
+            <summary>
+            Swagger examples for SendNotificationRequest
+            </summary>
+        </member>
+        <member name="M:NotificationService.SwaggerExamples.SendNotificationRequestExample.GetExamples">
+            <summary>
+            Get multiple examples for SendNotificationRequest
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:NotificationService.Validators.EmailMessageValidator">
+            <summary>
+            Validator for email notifications.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Validators.PushMessageValidator">
+            <summary>
+            Validator for push notifications.
+            </summary>
+        </member>
+        <member name="T:NotificationService.Validators.SmsMessageValidator">
+            <summary>
+            Validator for SMS notifications.
+            </summary>
+        </member>
+    </members>
+</doc>

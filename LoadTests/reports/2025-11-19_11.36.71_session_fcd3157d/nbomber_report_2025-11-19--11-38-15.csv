@@ -1,0 +1,3 @@
+test_suite,test_name,scenario,duration,step_name,request_count,ok,failed,rps,min,mean,max,50_percent,75_percent,95_percent,99_percent,std_dev,data_transfer_min_kb,data_transfer_mean_kb,data_transfer_max_kb,data_transfer_all_mb
+Health Check Load Tests,Health Monitoring Performance,comprehensive_health,00:00:40,global information,5285,29,5256,0.7,39.19,446.28,2034.72,214.27,690.69,1982.46,2035.71,495.85,0,0,0,0
+Health Check Load Tests,Health Monitoring Performance,system_metrics,00:00:40,global information,600,0,600,0,0,0,0,0,0,0,0,0,0,0,0,0

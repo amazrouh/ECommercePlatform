@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notification Service Dashboard</title>
+    <link href="/css/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <script src="/js/chart/chart.min.js"></script>
+    <script src="/js/signalr/signalr.min.js"></script>
+    <style>
+        .metric-card { transition: all 0.3s ease; }
+        .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .status-healthy { color: #28a745; }
+        .status-degraded { color: #ffc107; }
+        .status-unhealthy { color: #dc3545; }
+        .connection-status { position: fixed; top: 10px; right: 10px; z-index: 1000; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        .strategy-card { border-left: 4px solid #007bff; }
+        .error-alert { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div id="connection-status" class="connection-status alert alert-secondary">
+        <i class="bi bi-circle-fill text-secondary"></i> Connecting...
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">Dashboard Login</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="login-alert" class="alert alert-danger d-none"></div>
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" value="admin" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" value="admin123" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="login-btn">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid mt-4" id="dashboard-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="bi bi-graph-up"></i> Notification Service Dashboard
+                    <button type="button" class="btn btn-outline-danger btn-sm float-end" id="logout-btn">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </h1>
+            </div>
+        </div>
+
+        <!-- System Overview Cards -->
+        <div class="row mb-4" id="overview-cards">
+            <!-- Cards will be populated by JavaScript -->
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bar-chart"></i> Notifications Per Minute
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="notificationsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pie-chart"></i> Success Rate
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="successRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Performance -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-trophy"></i> Strategy Performance
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="strategy-cards">
+                            <!-- Strategy cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Errors -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> Recent Errors
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="error-list" class="list-group">
+                            <div class="list-group-item text-muted">No recent errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-cpu"></i> System Resources
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="cpu-usage">0%</div>
+                                    <small class="text-muted">CPU Usage</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="memory-usage">0 MB</div>
+                                    <small class="text-muted">Memory Usage</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="progress mt-3" style="height: 8px;">
+                            <div class="progress-bar bg-primary" id="cpu-progress" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted">CPU</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people"></i> Active Connections
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <div class="h1 mb-0" id="active-connections">0</div>
+                            <small class="text-muted">Dashboard Clients</small>
+                        </div>
+                        <div class="mt-3">
+                            <div id="connection-list" class="small text-muted">
+                                <!-- Connection details will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- SignalR JavaScript loaded from CDN -->
+    <script>
+        let connection;
+        let notificationsChart;
+        let successRateChart;
+
+        // Authentication functions
+        function checkAuthentication() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // Verify token is still valid by making a test API call
+                fetch('/api/dashboard/metrics/current', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        showDashboard();
+                        initializeSignalR();
+                    } else {
+                        localStorage.removeItem('authToken');
+                        showLogin();
+                    }
+                })
+                .catch(() => {
+                    localStorage.removeItem('authToken');
+                    showLogin();
+                });
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('dashboard-content').style.display = 'none';
+            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+        }
+
+        function showDashboard() {
+            document.getElementById('dashboard-content').style.display = 'block';
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            const loginAlert = document.getElementById('login-alert');
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Logging in...';
+            loginAlert.classList.add('d-none');
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('authToken', data.token);
+                    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+                    showDashboard();
+                    initializeSignalR();
+                } else {
+                    throw new Error('Invalid credentials');
+                }
+            })
+            .catch(error => {
+                loginAlert.textContent = error.message || 'Login failed';
+                loginAlert.classList.remove('d-none');
+            })
+            .finally(() => {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Login';
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            if (connection) {
+                connection.stop();
+            }
+            location.reload();
+        }
+
+        // Event listeners
+        document.getElementById('login-btn').addEventListener('click', login);
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            login();
+        });
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        let chartData = {
+            notifications: [],
+            successRates: [],
+            timestamps: []
+        };
+
+        // Initialize charts
+        function initializeCharts() {
+            const ctx1 = document.getElementById('notificationsChart').getContext('2d');
+            notificationsChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Notifications/Min',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('successRateChart').getContext('2d');
+            successRateChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Successful', 'Failed'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#28a745', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Initialize SignalR connection
+        function initializeSignalR() {
+            const token = localStorage.getItem('authToken');
+            const config = {};
+
+            // Only add access token if we have one
+            if (token) {
+                config.accessTokenFactory = () => token;
+            }
+
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl('/notificationHub', config)
+                .withAutomaticReconnect()
+                .build();
+
+            // Connection events
+            connection.onreconnecting(() => {
+                updateConnectionStatus('reconnecting', 'warning');
+            });
+
+            connection.onreconnected(() => {
+                updateConnectionStatus('connected', 'success');
+            });
+
+            connection.onclose(() => {
+                updateConnectionStatus('disconnected', 'danger');
+            });
+
+            // Dashboard events
+            connection.on('ReceiveMetrics', (metrics) => {
+                updateDashboard(metrics);
+            });
+
+            connection.on('ReceiveUpdate', (update) => {
+                handleRealTimeUpdate(update);
+            });
+
+            // Start connection
+            connection.start()
+                .then(() => {
+                    updateConnectionStatus('connected', 'success');
+                    return connection.invoke('JoinDashboard');
+                })
+                .then(() => {
+                    // Load initial metrics after connecting
+                    return loadInitialMetrics();
+                })
+                .catch(err => {
+                    console.error('SignalR connection error:', err);
+                    updateConnectionStatus('error', 'danger');
+                });
+        }
+
+        // Load initial metrics from API
+        function loadInitialMetrics() {
+            const token = localStorage.getItem('authToken');
+
+            // If no token, try to load metrics without authentication (for testing)
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            fetch('/api/dashboard/metrics/current', {
+                headers: headers
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(metrics => {
+                console.log('Loaded initial metrics:', metrics);
+                updateDashboard(metrics);
+            })
+            .catch(err => {
+                console.error('Failed to load initial metrics:', err);
+                // Don't show error status if we don't have auth - just log it
+                if (token) {
+                    updateConnectionStatus('error', 'danger');
+                }
+            });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status, type) {
+            const statusElement = document.getElementById('connection-status');
+            const iconClass = type === 'success' ? 'bi-check-circle-fill' :
+                            type === 'warning' ? 'bi-exclamation-triangle-fill' :
+                            type === 'danger' ? 'bi-x-circle-fill' : 'bi-circle-fill';
+
+            statusElement.className = `connection-status alert alert-${type}`;
+            statusElement.innerHTML = `<i class="bi ${iconClass}"></i> ${status.charAt(0).toUpperCase() + status.slice(1)}`;
+        }
+
+        // Update dashboard with metrics
+        function updateDashboard(metrics) {
+            // Update overview cards
+            updateOverviewCards(metrics);
+
+            // Update charts
+            updateCharts(metrics);
+
+            // Update strategy cards
+            updateStrategyCards(metrics.strategyMetrics);
+
+            // Update system resources
+            updateSystemResources(metrics);
+
+            // Update connections
+            updateConnections(metrics.activeConnections);
+
+            // Update errors
+            updateErrors(metrics.recentErrors);
+        }
+
+        // Update overview cards
+        function updateOverviewCards(metrics) {
+            const cardsContainer = document.getElementById('overview-cards');
+            const successRateClass = metrics.successRate >= 95 ? 'success' :
+                                   metrics.successRate >= 80 ? 'warning' : 'danger';
+
+            cardsContainer.innerHTML = `
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0">${metrics.notificationsPerMinute}</div>
+                            <small class="text-muted">Notifications/Min</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0 text-${successRateClass}">${metrics.successRate.toFixed(1)}%</div>
+                            <small class="text-muted">Success Rate</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0">${metrics.averageResponseTimeMs.toFixed(0)}ms</div>
+                            <small class="text-muted">Avg Response Time</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0">${metrics.activeConnections}</div>
+                            <small class="text-muted">Active Connections</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update charts
+        function updateCharts(metrics) {
+            // Update notifications chart
+            const now = new Date().toLocaleTimeString();
+            chartData.timestamps.push(now);
+            chartData.notifications.push(metrics.notificationsPerMinute);
+
+            // Keep only last 20 data points
+            if (chartData.timestamps.length > 20) {
+                chartData.timestamps.shift();
+                chartData.notifications.shift();
+            }
+
+            notificationsChart.data.labels = [...chartData.timestamps];
+            notificationsChart.data.datasets[0].data = [...chartData.notifications];
+            notificationsChart.update();
+
+            // Update success rate chart
+            const successCount = Math.round(metrics.successRate);
+            const failureCount = 100 - successCount;
+            successRateChart.data.datasets[0].data = [successCount, failureCount];
+            successRateChart.update();
+        }
+
+        // Update strategy cards
+        function updateStrategyCards(strategyMetrics) {
+            const container = document.getElementById('strategy-cards');
+            container.innerHTML = '';
+
+            Object.entries(strategyMetrics).forEach(([type, metrics]) => {
+                const cardClass = metrics.isActive ? 'border-success' : 'border-secondary';
+                const statusIcon = metrics.isActive ? 'bi-check-circle-fill text-success' : 'bi-pause-circle-fill text-secondary';
+
+                container.innerHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="card strategy-card ${cardClass}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">${type}</h6>
+                                    <i class="bi ${statusIcon}"></i>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="h6 mb-0">${metrics.totalSent}</div>
+                                        <small class="text-muted">Sent</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="h6 mb-0 text-success">${metrics.successRate.toFixed(1)}%</div>
+                                        <small class="text-muted">Success</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="h6 mb-0">${metrics.averageResponseTimeMs.toFixed(0)}ms</div>
+                                        <small class="text-muted">Avg Time</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Update system resources
+        function updateSystemResources(metrics) {
+            document.getElementById('cpu-usage').textContent = `${metrics.cpuUsagePercent.toFixed(1)}%`;
+            document.getElementById('memory-usage').textContent = `${metrics.memoryUsageMB.toFixed(0)} MB`;
+            document.getElementById('cpu-progress').style.width = `${metrics.cpuUsagePercent}%`;
+        }
+
+        // Update connections
+        function updateConnections(count) {
+            document.getElementById('active-connections').textContent = count;
+        }
+
+        // Update errors
+        function updateErrors(errors) {
+            const container = document.getElementById('error-list');
+            if (errors && errors.length > 0) {
+                container.innerHTML = errors.map(error =>
+                    `<div class="list-group-item error-alert">${error}</div>`
+                ).join('');
+            } else {
+                container.innerHTML = '<div class="list-group-item text-muted">No recent errors</div>';
+            }
+        }
+
+        // Handle real-time updates
+        function handleRealTimeUpdate(update) {
+            switch (update.type) {
+                case 0: // Metrics
+                    updateDashboard(update.metrics);
+                    break;
+                case 1: // NotificationEvent
+                    // Handle notification event (could show toast notification)
+                    console.log('Notification event:', update.notificationEvent);
+                    break;
+                case 2: // HealthEvent
+                    // Handle health event
+                    console.log('Health event:', update.healthEvent);
+                    break;
+                case 3: // ConnectionUpdate
+                    updateConnections(update.metrics?.activeConnections || 0);
+                    break;
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            // Skip authentication temporarily for testing
+            showDashboard();
+            initializeSignalR();
+
+            // Refresh data every 30 seconds as fallback
+            setInterval(() => {
+                if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                    connection.invoke('RequestMetrics');
+                }
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -95,7 +95,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Notification Service API",
         Version = "1.0.0",
-        Description = "API for sending various types of notifications",
+        Description = "Comprehensive notification service with Email, SMS, Push, and Webhook support",
         Contact = new OpenApiContact
         {
             Name = "API Support",
@@ -104,25 +104,27 @@ builder.Services.AddSwaggerGen(options =>
     });
 
     // Configure enums and other settings
-
-
-    // Ensure proper OpenAPI version specification
     options.DescribeAllParametersInCamelCase();
-
 
     // Include XML comments
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     options.IncludeXmlComments(xmlPath);
 
+    // Add request examples
+    options.ExampleFilters();
+
     // Add JWT authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+        Description = @"JWT Authorization header using the Bearer scheme.
+                        Enter 'Bearer' [space] and then your token in the text input below.
+                        Example: 'Bearer 12345abcdef'",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -140,6 +142,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+// Add Swagger examples
+builder.Services.AddSwaggerExamplesFromAssemblies(Assembly.GetExecutingAssembly());
 
 // Add notification services with decorators
 builder.Services.AddNotificationServices(builder.Configuration);
@@ -202,6 +207,10 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Notification Service API v1");
     options.RoutePrefix = string.Empty; // Serve Swagger UI at root
+    options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    options.DefaultModelsExpandDepth(-1); // Hide schemas section
+    options.DisplayRequestDuration();
+    options.EnableTryItOutByDefault();
 });
 
 // Enable HTTPS redirection and HSTS

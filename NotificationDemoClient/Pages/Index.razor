@@ -1,0 +1,620 @@
+﻿@page "/"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<PageTitle>Notification Service Demo</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4 text-center mb-4">
+                <i class="fas fa-bell text-primary"></i>
+                Notification Service Demo
+            </h1>
+            <p class="lead text-center text-muted mb-5">
+                Comprehensive showcase of all implemented features including real-time dashboard, notification testing, and performance monitoring.
+            </p>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plug"></i>
+                        Connection Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 mb-1" style="color: @GetConnectionColor();">
+                                    <i class="fas @(IsConnected ? "fa-circle" : "fa-circle-notch fa-spin")"></i>
+                                </div>
+                                <small class="text-muted">SignalR</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 mb-1" style="color: @GetApiColor();">
+                                    <i class="fas @(IsApiReachable ? "fa-check-circle" : "fa-exclamation-triangle")"></i>
+                                </div>
+                                <small class="text-muted">API</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 mb-1">@ActiveConnections</div>
+                                <small class="text-muted">Active Connections</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 mb-1">@TotalNotifications</div>
+                                <small class="text-muted">Total Notifications</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Metrics Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        Real-time Metrics Dashboard
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="ToggleAutoRefresh">
+                        <i class="fas @(AutoRefresh ? "fa-pause" : "fa-play")"></i>
+                        @(AutoRefresh ? "Pause" : "Resume") Auto Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (CurrentMetrics != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">@CurrentMetrics.NotificationsPerMinute</div>
+                                        <small>Notifications/Min</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">@($"{CurrentMetrics.SuccessRate:F1}%")</div>
+                                        <small>Success Rate</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">@($"{CurrentMetrics.AverageResponseTimeMs:F0}ms")</div>
+                                        <small>Avg Response Time</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">@CurrentMetrics.ActiveConnections</div>
+                                        <small>Active Connections</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Strategy Breakdown -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h6>Strategy Performance</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Strategy</th>
+                                                <th>Total Sent</th>
+                                                <th>Success Rate</th>
+                                                <th>Avg Response Time</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var strategy in CurrentMetrics.StrategyMetrics)
+                                            {
+                                                <tr>
+                                                    <td>@strategy.Key</td>
+                                                    <td>@strategy.Value.TotalSent</td>
+                                                    <td>@($"{strategy.Value.SuccessRate:F1}%")</td>
+                                                    <td>@($"{strategy.Value.AverageResponseTimeMs:F0}ms")</td>
+                                                    <td>
+                                                        <span class="badge @(strategy.Value.IsActive ? "bg-success" : "bg-secondary")">
+                                                            @(strategy.Value.IsActive ? "Active" : "Inactive")
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Connecting to metrics service...</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Testing Interface -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-paper-plane"></i>
+                        Notification Testing
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form @onsubmit="SendNotification" @onsubmit:preventDefault="true">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Notification Type</label>
+                                <select class="form-select" @bind="SelectedNotificationType">
+                                    <option value="Email">Email</option>
+                                    <option value="Sms">SMS</option>
+                                    <option value="Push">Push</option>
+                                    <option value="Webhook">Webhook</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Recipient</label>
+                                <input type="text" class="form-control" @bind="Recipient"
+                                       placeholder="@GetRecipientPlaceholder()" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Subject</label>
+                                <input type="text" class="form-control" @bind="Subject"
+                                       placeholder="Notification subject" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Body</label>
+                                <input type="text" class="form-control" @bind="Body"
+                                       placeholder="Notification message" />
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary me-2" disabled="@IsSending">
+                                    @if (IsSending)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                        Sending...
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-paper-plane me-2"></i>
+                                        Send Notification
+                                    }
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" @onclick="LoadDemoData">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Load Demo Data
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    @if (!string.IsNullOrEmpty(SendResult))
+                    {
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            @SendResult
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Demonstration -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i>
+                        Feature Demonstrations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Design Patterns</h6>
+                            <button class="btn btn-sm btn-outline-primary me-2 mb-2" @onclick="() => RunDemo('strategy')">
+                                Strategy Pattern
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary me-2 mb-2" @onclick="() => RunDemo('factory')">
+                                Factory Pattern
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary me-2 mb-2" @onclick="() => RunDemo('decorator')">
+                                Decorator Pattern
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Performance Features</h6>
+                            <button class="btn btn-sm btn-outline-success me-2 mb-2" @onclick="() => RunDemo('caching')">
+                                Caching Demo
+                            </button>
+                            <button class="btn btn-sm btn-outline-success me-2 mb-2" @onclick="() => RunDemo('async')">
+                                Async Performance
+                            </button>
+                            <button class="btn btn-sm btn-outline-success me-2 mb-2" @onclick="() => RunDemo('batching')">
+                                Message Batching
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Security & DevOps</h6>
+                            <button class="btn btn-sm btn-outline-warning me-2 mb-2" @onclick="() => RunDemo('security')">
+                                Security Features
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning me-2 mb-2" @onclick="() => RunDemo('health')">
+                                Health Checks
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning me-2 mb-2" @onclick="() => RunDemo('monitoring')">
+                                Monitoring
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Real-time Features</h6>
+                            <button class="btn btn-sm btn-outline-info me-2 mb-2" @onclick="() => RunDemo('realtime')">
+                                Real-time Dashboard
+                            </button>
+                            <button class="btn btn-sm btn-outline-info me-2 mb-2" @onclick="() => RunDemo('groups')">
+                                SignalR Groups
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger me-2 mb-2" @onclick="() => RunDemo('master')">
+                                Master Demo
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(DemoResult))
+                    {
+                        <div class="alert alert-success mt-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Demo Result:</strong> @DemoResult
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        @foreach (var activity in RecentActivities.Take(10))
+                        {
+                            <div class="list-group-item px-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">@activity.Type</h6>
+                                    <small>@activity.Timestamp.ToString("HH:mm:ss")</small>
+                                </div>
+                                <p class="mb-1">@activity.Message</p>
+                                <small class="text-muted">@activity.Details</small>
+                            </div>
+                        }
+                        @if (!RecentActivities.Any())
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No recent activity</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Microsoft.AspNetCore.SignalR.Client.HubConnection? hubConnection;
+    private System.Timers.Timer? refreshTimer;
+    private bool IsConnected { get; set; }
+    private bool IsApiReachable { get; set; }
+    private bool AutoRefresh { get; set; } = true;
+    private int ActiveConnections { get; set; }
+    private int TotalNotifications { get; set; }
+    private DashboardMetrics? CurrentMetrics { get; set; }
+    private string SelectedNotificationType { get; set; } = "Email";
+    private string Recipient { get; set; } = "";
+    private string Subject { get; set; } = "";
+    private string Body { get; set; } = "";
+    private bool IsSending { get; set; }
+    private string SendResult { get; set; } = "";
+    private string DemoResult { get; set; } = "";
+    private List<ActivityItem> RecentActivities { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeSignalR();
+        await CheckApiConnectivity();
+        StartAutoRefresh();
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            hubConnection = new Microsoft.AspNetCore.SignalR.Client.HubConnectionBuilder()
+                .WithUrl("http://localhost:8080/notificationHub")
+                .WithAutomaticReconnect()
+                .Build();
+
+            hubConnection.On<DashboardMetrics>("ReceiveMetrics", (metrics) =>
+            {
+                CurrentMetrics = metrics;
+                ActiveConnections = metrics.ActiveConnections;
+                TotalNotifications = metrics.StrategyMetrics.Sum(s => s.Value.TotalSent);
+                AddActivity("Metrics", $"Updated metrics - {metrics.NotificationsPerMinute} notifications/min", $"Success rate: {metrics.SuccessRate:F1}%");
+                InvokeAsync(StateHasChanged);
+            });
+
+            hubConnection.On<string>("NotificationSent", (messageId) =>
+            {
+                AddActivity("Notification", "Notification sent successfully", $"Message ID: {messageId}");
+                InvokeAsync(StateHasChanged);
+            });
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("JoinDashboard");
+
+            IsConnected = true;
+            AddActivity("Connection", "Connected to SignalR hub", "Real-time updates enabled");
+        }
+        catch (Exception ex)
+        {
+            IsConnected = false;
+            AddActivity("Connection", "Failed to connect to SignalR", ex.Message);
+        }
+    }
+
+    private async Task CheckApiConnectivity()
+    {
+        try
+        {
+            var response = await Http.GetAsync("http://localhost:8080/api/notifications/health");
+            IsApiReachable = response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            IsApiReachable = false;
+        }
+    }
+
+    private void StartAutoRefresh()
+    {
+        refreshTimer = new System.Timers.Timer(5000); // 5 seconds
+        refreshTimer.Elapsed += async (sender, e) =>
+        {
+            if (AutoRefresh)
+            {
+                await CheckApiConnectivity();
+                await InvokeAsync(StateHasChanged);
+            }
+        };
+        refreshTimer.Start();
+    }
+
+    private async Task SendNotification()
+    {
+        if (string.IsNullOrWhiteSpace(Recipient) || string.IsNullOrWhiteSpace(Subject) || string.IsNullOrWhiteSpace(Body))
+        {
+            SendResult = "Please fill in all fields";
+            return;
+        }
+
+        IsSending = true;
+        SendResult = "";
+
+        try
+        {
+            var request = new
+            {
+                type = SelectedNotificationType,
+                to = Recipient,
+                subject = Subject,
+                body = Body
+            };
+
+            var response = await Http.PostAsJsonAsync("http://localhost:8080/api/notifications", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<NotificationResponse>();
+                SendResult = $"Notification sent successfully! Message ID: {result?.Id}";
+                AddActivity("Send", $"{SelectedNotificationType} notification sent", $"To: {Recipient}");
+            }
+            else
+            {
+                SendResult = $"Failed to send notification: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            SendResult = $"Error sending notification: {ex.Message}";
+        }
+        finally
+        {
+            IsSending = false;
+        }
+    }
+
+    private void LoadDemoData()
+    {
+        switch (SelectedNotificationType)
+        {
+            case "Email":
+                Recipient = "demo@example.com";
+                Subject = "Demo Notification";
+                Body = "This is a demo email notification sent from the Notification Service Demo Client.";
+                break;
+            case "Sms":
+                Recipient = "+1234567890";
+                Subject = "";
+                Body = "Demo SMS from Notification Service Demo Client";
+                break;
+            case "Push":
+                Recipient = "demo-device-token";
+                Subject = "Demo Push";
+                Body = "Demo push notification from Notification Service Demo Client";
+                break;
+            case "Webhook":
+                Recipient = "https://httpbin.org/post";
+                Subject = "Demo Webhook";
+                Body = "{\"message\": \"Demo webhook from Notification Service Demo Client\", \"timestamp\": \"" + DateTime.UtcNow.ToString("o") + "\"}";
+                break;
+        }
+    }
+
+    private async Task RunDemo(string demoType)
+    {
+        DemoResult = $"Running {demoType} demo...";
+
+        try
+        {
+            var response = await Http.PostAsync($"http://localhost:8080/api/demo/{demoType}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+                DemoResult = $"{demoType} demo completed successfully!";
+                AddActivity("Demo", $"{demoType} demo executed", "See console for details");
+            }
+            else
+            {
+                DemoResult = $"{demoType} demo failed: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            DemoResult = $"{demoType} demo error: {ex.Message}";
+        }
+    }
+
+    private void ToggleAutoRefresh()
+    {
+        AutoRefresh = !AutoRefresh;
+        AddActivity("Settings", AutoRefresh ? "Auto refresh enabled" : "Auto refresh disabled", "");
+    }
+
+    private string GetRecipientPlaceholder()
+    {
+        return SelectedNotificationType switch
+        {
+            "Email" => "user@example.com",
+            "Sms" => "+1234567890",
+            "Push" => "device-token",
+            "Webhook" => "https://api.example.com/webhook",
+            _ => "recipient"
+        };
+    }
+
+    private string GetConnectionColor() => IsConnected ? "green" : "red";
+    private string GetApiColor() => IsApiReachable ? "green" : "red";
+
+    private void AddActivity(string type, string message, string details)
+    {
+        RecentActivities.Insert(0, new ActivityItem
+        {
+            Type = type,
+            Message = message,
+            Details = details,
+            Timestamp = DateTime.Now
+        });
+
+        if (RecentActivities.Count > 50)
+        {
+            RecentActivities.RemoveAt(RecentActivities.Count - 1);
+        }
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+        hubConnection?.DisposeAsync();
+    }
+
+    public class DashboardMetrics
+    {
+        public DateTimeOffset Timestamp { get; set; }
+        public int NotificationsPerMinute { get; set; }
+        public double SuccessRate { get; set; }
+        public double AverageResponseTimeMs { get; set; }
+        public int ActiveConnections { get; set; }
+        public int ActiveStrategies { get; set; }
+        public int MemoryUsageMB { get; set; }
+        public double CpuUsagePercent { get; set; }
+        public Dictionary<string, StrategyMetrics> StrategyMetrics { get; set; } = new();
+    }
+
+    public class StrategyMetrics
+    {
+        public int TotalSent { get; set; }
+        public double SuccessRate { get; set; }
+        public double AverageResponseTimeMs { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class NotificationResponse
+    {
+        public string? Id { get; set; }
+        public string? Type { get; set; }
+        public string? To { get; set; }
+        public bool Success { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    public class ActivityItem
+    {
+        public string Type { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string Details { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+    }
+}

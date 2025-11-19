@@ -1,0 +1,19 @@
+2025-11-19 11:08:05.838 +02:00 [INF] [ThreadId:1] NBomber 5.4.0 started a new session: 2025-11-19_09.08.83_session_ca21cc6e
+2025-11-19 11:08:05.851 +02:00 [INF] [ThreadId:1] NBomber started as single node
+2025-11-19 11:08:05.852 +02:00 [INF] [ThreadId:1] License validation....
+2025-11-19 11:08:05.852 +02:00 [WRN] [ThreadId:1] THIS VERSION IS FREE ONLY FOR PERSONAL USE. You can't use it for an organization.
+2025-11-19 11:08:05.853 +02:00 [INF] [ThreadId:1] Reports folder: C:\Drive_D\Work\Projects\ECommercePlatform\LoadTests\bin\Debug\net9.0\reports\empty session
+2025-11-19 11:08:05.854 +02:00 [INF] [ThreadId:1] Plugins: no plugins were loaded
+2025-11-19 11:08:05.855 +02:00 [INF] [ThreadId:1] Reporting sinks: no reporting sinks were loaded
+2025-11-19 11:08:05.855 +02:00 [INF] [ThreadId:1] Starting init...
+2025-11-19 11:08:05.856 +02:00 [INF] [ThreadId:1] Target scenarios: comprehensive_health, system_metrics
+2025-11-19 11:08:05.856 +02:00 [INF] [ThreadId:1] Init finished
+2025-11-19 11:08:05.857 +02:00 [INF] [ThreadId:1] Starting warm up...
+2025-11-19 11:08:05.857 +02:00 [INF] [ThreadId:1] Warm up for scenarios: comprehensive_health, system_metrics
+2025-11-19 11:08:05.858 +02:00 [INF] [ThreadId:1] Warm up duration: 00:00:30
+2025-11-19 11:08:36.901 +02:00 [INF] [ThreadId:65] Starting bombing...
+2025-11-19 11:09:17.326 +02:00 [INF] [ThreadId:70] Waiting on scenarios completion...
+2025-11-19 11:09:18.314 +02:00 [WRN] [ThreadId:71] Stopping test early: Stopping test because of too many fails. Scenario 'comprehensive_health' contains '5554' fails.
+2025-11-19 11:09:21.320 +02:00 [INF] [ThreadId:70] Calculating final statistics...
+2025-11-19 11:09:21.881 +02:00 [INF] [ThreadId:82] Reports saved in folder: C:\Drive_D\Work\Projects\ECommercePlatform\LoadTests\reports\2025-11-19_09.08.83_session_ca21cc6e
+2025-11-19 11:09:21.885 +02:00 [WRN] [ThreadId:82] THIS VERSION IS FREE ONLY FOR PERSONAL USE. You can't use it for an organization.

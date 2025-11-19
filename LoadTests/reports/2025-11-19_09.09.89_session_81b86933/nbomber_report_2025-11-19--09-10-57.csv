@@ -1,0 +1,4 @@
+test_suite,test_name,scenario,duration,step_name,request_count,ok,failed,rps,min,mean,max,50_percent,75_percent,95_percent,99_percent,std_dev,data_transfer_min_kb,data_transfer_mean_kb,data_transfer_max_kb,data_transfer_all_mb
+Security Load Tests,Security Performance Benchmark,rate_limiting,00:01:00,global information,3000,3000,0,50,3.11,15.64,114.03,12.75,19.9,35.65,65.79,12.18,0,0,0,0
+Security Load Tests,Security Performance Benchmark,authentication_load,00:01:00,global information,600,11,589,0.2,9.06,32.37,66.32,29.02,42.82,50.82,66.37,17.01,0,0,0,0
+Security Load Tests,Security Performance Benchmark,unauthorized_access,00:01:00,global information,1200,15,1185,0.2,5.05,17.18,45.64,15.59,22.82,27.86,45.66,10.27,0,0,0,0

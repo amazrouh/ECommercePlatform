@@ -1,0 +1,3 @@
+test_suite,test_name,scenario,duration,step_name,request_count,ok,failed,rps,min,mean,max,50_percent,75_percent,95_percent,99_percent,std_dev,data_transfer_min_kb,data_transfer_mean_kb,data_transfer_max_kb,data_transfer_all_mb
+Dashboard Load Tests,Dashboard Performance Benchmark,dashboard_metrics,00:00:35,global information,700,0,700,0,0,0,0,0,0,0,0,0,0,0,0,0
+Dashboard Load Tests,Dashboard Performance Benchmark,health_checks,00:00:35,global information,5776,32,5744,0.9,16.32,62.52,191.59,38.37,53.86,176.64,191.62,54.89,0,0,0,0

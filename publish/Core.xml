@@ -1,0 +1,341 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Core</name>
+    </assembly>
+    <members>
+        <member name="T:Core.Common.Entity">
+            <summary>
+            Base class for all entities in the domain.
+            Provides common properties and behavior for domain entities.
+            </summary>
+        </member>
+        <member name="P:Core.Common.Entity.Id">
+            <summary>
+            Gets or sets the unique identifier for the entity.
+            </summary>
+        </member>
+        <member name="P:Core.Common.Entity.CreatedAt">
+            <summary>
+            Gets or sets the date and time when the entity was created.
+            </summary>
+        </member>
+        <member name="P:Core.Common.Entity.UpdatedAt">
+            <summary>
+            Gets or sets the date and time when the entity was last updated.
+            </summary>
+        </member>
+        <member name="M:Core.Common.Entity.SetUpdated">
+            <summary>
+            Updates the entity's UpdatedAt timestamp.
+            </summary>
+        </member>
+        <member name="T:Core.Common.IAggregateRoot">
+            <summary>
+            Marker interface for aggregate roots in the domain.
+            Aggregate roots are entities that are roots of an aggregate and maintain its invariants.
+            </summary>
+        </member>
+        <member name="T:Core.Enums.NotificationStatus">
+            <summary>
+            Represents the current status of a notification.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationStatus.Pending">
+            <summary>
+            Notification is pending to be sent.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationStatus.Sent">
+            <summary>
+            Notification has been sent to the provider.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationStatus.Failed">
+            <summary>
+            Notification failed to be sent.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationStatus.Delivered">
+            <summary>
+            Notification has been successfully delivered to the recipient.
+            </summary>
+        </member>
+        <member name="T:Core.Enums.NotificationType">
+            <summary>
+            Represents the type of notification to be sent.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationType.Email">
+            <summary>
+            Email notification type.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationType.Sms">
+            <summary>
+            SMS (text message) notification type.
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationType.Push">
+            <summary>
+            Push notification type (mobile/web).
+            </summary>
+        </member>
+        <member name="F:Core.Enums.NotificationType.Webhook">
+            <summary>
+            Webhook notification type (HTTP callbacks).
+            </summary>
+        </member>
+        <member name="T:Core.Interfaces.IAuditLogger">
+            <summary>
+            Interface for audit logging operations
+            </summary>
+        </member>
+        <member name="M:Core.Interfaces.IAuditLogger.LogNotificationSentAsync(Core.Models.NotificationMessage,Core.Models.NotificationResult,System.String)">
+            <summary>
+            Logs a successful notification send operation
+            </summary>
+            <param name="message">The notification message that was sent</param>
+            <param name="result">The result of the send operation</param>
+            <param name="userId">The user ID who initiated the operation</param>
+        </member>
+        <member name="M:Core.Interfaces.IAuditLogger.LogNotificationFailedAsync(Core.Models.NotificationMessage,System.String,System.String)">
+            <summary>
+            Logs a failed notification send operation
+            </summary>
+            <param name="message">The notification message that failed to send</param>
+            <param name="error">The error message</param>
+            <param name="userId">The user ID who initiated the operation</param>
+        </member>
+        <member name="M:Core.Interfaces.IAuditLogger.LogAuthenticationFailureAsync(System.String,System.String,System.String)">
+            <summary>
+            Logs authentication failure
+            </summary>
+            <param name="username">The username that failed authentication</param>
+            <param name="ipAddress">The IP address of the request</param>
+            <param name="reason">The reason for authentication failure</param>
+        </member>
+        <member name="M:Core.Interfaces.IAuditLogger.LogAuthenticationSuccessAsync(System.String,System.String)">
+            <summary>
+            Logs successful authentication
+            </summary>
+            <param name="username">The username that was authenticated</param>
+            <param name="ipAddress">The IP address of the request</param>
+        </member>
+        <member name="M:Core.Interfaces.IAuditLogger.LogAuthorizationFailureAsync(System.String,System.String,System.String,System.String)">
+            <summary>
+            Logs authorization failure
+            </summary>
+            <param name="userId">The user ID that failed authorization</param>
+            <param name="resource">The resource being accessed</param>
+            <param name="action">The action being performed</param>
+            <param name="ipAddress">The IP address of the request</param>
+        </member>
+        <member name="M:Core.Interfaces.IAuditLogger.LogSecurityEventAsync(System.String,System.String,System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary>
+            Logs a security event
+            </summary>
+            <param name="eventType">The type of security event</param>
+            <param name="description">Description of the event</param>
+            <param name="userId">The user ID associated with the event (optional)</param>
+            <param name="ipAddress">The IP address of the request (optional)</param>
+            <param name="additionalData">Additional data related to the event</param>
+        </member>
+        <member name="T:Core.Interfaces.IAuthService">
+            <summary>
+            Interface for authentication operations
+            </summary>
+        </member>
+        <member name="M:Core.Interfaces.IAuthService.AuthenticateAsync(System.String,System.String)">
+            <summary>
+            Authenticates a user and returns a JWT token if successful
+            </summary>
+            <param name="username">The username to authenticate</param>
+            <param name="password">The password for authentication</param>
+            <returns>A JWT token if authentication is successful, null otherwise</returns>
+        </member>
+        <member name="M:Core.Interfaces.IAuthService.ValidateCredentialsAsync(System.String,System.String)">
+            <summary>
+            Validates user credentials
+            </summary>
+            <param name="username">The username to validate</param>
+            <param name="password">The password to validate</param>
+            <returns>True if credentials are valid, false otherwise</returns>
+        </member>
+        <member name="M:Core.Interfaces.IAuthService.GetUserRoleAsync(System.String)">
+            <summary>
+            Gets the user role for the given username
+            </summary>
+            <param name="username">The username to get role for</param>
+            <returns>The user role if found, null otherwise</returns>
+        </member>
+        <member name="T:Core.Interfaces.IMetricsRecorder">
+            <summary>
+            Interface for recording notification metrics
+            </summary>
+        </member>
+        <member name="M:Core.Interfaces.IMetricsRecorder.RecordNotificationEvent(Core.Enums.NotificationType,System.Boolean,System.Double,System.String,System.String)">
+            <summary>
+            Record a notification event for metrics collection
+            </summary>
+            <param name="type">Notification type</param>
+            <param name="success">Whether the notification was successful</param>
+            <param name="responseTimeMs">Response time in milliseconds</param>
+            <param name="errorMessage">Error message if failed</param>
+            <param name="userId">User ID who initiated the notification</param>
+        </member>
+        <member name="T:Core.Interfaces.NullMetricsRecorder">
+            <summary>
+            Null implementation for when metrics are disabled
+            </summary>
+        </member>
+        <member name="T:Core.Interfaces.INotificationService">
+            <summary>
+            High-level service for sending notifications.
+            </summary>
+        </member>
+        <member name="M:Core.Interfaces.INotificationService.SendAsync(Core.Enums.NotificationType,Core.Models.NotificationMessage,System.Threading.CancellationToken)">
+            <summary>
+            Sends a notification using the appropriate strategy for the specified type.
+            </summary>
+            <param name="type">The type of notification to send.</param>
+            <param name="message">The notification message to send.</param>
+            <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+            <returns>A NotificationResult indicating the success or failure of the operation.</returns>
+        </member>
+        <member name="M:Core.Interfaces.INotificationService.SendBatchAsync(System.Collections.Generic.IDictionary{Core.Enums.NotificationType,Core.Models.NotificationMessage},System.Threading.CancellationToken)">
+            <summary>
+            Sends multiple notifications in parallel using appropriate strategies.
+            </summary>
+            <param name="notifications">A dictionary mapping notification types to their messages.</param>
+            <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+            <returns>A dictionary mapping notification types to their results.</returns>
+        </member>
+        <member name="M:Core.Interfaces.INotificationService.GetSupportedTypes">
+            <summary>
+            Gets the supported notification types.
+            </summary>
+            <returns>An enumerable of supported notification types.</returns>
+        </member>
+        <member name="T:Core.Interfaces.INotificationStrategy">
+            <summary>
+            Defines a strategy for sending notifications of a specific type.
+            </summary>
+        </member>
+        <member name="P:Core.Interfaces.INotificationStrategy.Type">
+            <summary>
+            Gets the type of notification this strategy handles.
+            </summary>
+        </member>
+        <member name="M:Core.Interfaces.INotificationStrategy.SendAsync(Core.Models.NotificationMessage,System.Threading.CancellationToken)">
+            <summary>
+            Sends a notification using this strategy.
+            </summary>
+            <param name="message">The notification message to send.</param>
+            <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+            <returns>A NotificationResult indicating the success or failure of the operation.</returns>
+        </member>
+        <member name="T:Core.Interfaces.INotificationStrategyFactory">
+            <summary>
+            Factory for creating notification strategy instances.
+            </summary>
+        </member>
+        <member name="M:Core.Interfaces.INotificationStrategyFactory.GetStrategy(Core.Enums.NotificationType)">
+            <summary>
+            Gets a notification strategy for the specified notification type.
+            </summary>
+            <param name="type">The type of notification to get a strategy for.</param>
+            <returns>A strategy instance that can handle the specified notification type.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when no strategy is available for the specified type.</exception>
+        </member>
+        <member name="T:Core.Models.NotificationMessage">
+            <summary>
+            Represents a notification message to be sent.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationMessage.To">
+            <summary>
+            Gets the recipient of the notification.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationMessage.Subject">
+            <summary>
+            Gets the subject of the notification.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationMessage.Body">
+            <summary>
+            Gets the body content of the notification.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationMessage.Metadata">
+            <summary>
+            Gets additional metadata associated with the notification.
+            </summary>
+        </member>
+        <member name="M:Core.Models.NotificationMessage.#ctor(System.String,System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary>
+            Initializes a new instance of the NotificationMessage class.
+            </summary>
+            <param name="to">The recipient of the notification.</param>
+            <param name="subject">The subject of the notification.</param>
+            <param name="body">The body content of the notification.</param>
+            <param name="metadata">Additional metadata for the notification (optional).</param>
+            <exception cref="T:System.ArgumentException">Thrown when required parameters are null or empty.</exception>
+        </member>
+        <member name="M:Core.Models.NotificationMessage.WithMetadata(System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary>
+            Creates a new NotificationMessage with updated metadata.
+            </summary>
+            <param name="metadata">The new metadata dictionary.</param>
+            <returns>A new NotificationMessage instance with updated metadata.</returns>
+        </member>
+        <member name="T:Core.Models.NotificationResult">
+            <summary>
+            Represents the result of a notification delivery attempt.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationResult.Success">
+            <summary>
+            Gets whether the notification was successfully sent.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationResult.MessageId">
+            <summary>
+            Gets the unique message identifier from the notification provider.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationResult.Error">
+            <summary>
+            Gets the error message if the notification failed.
+            </summary>
+        </member>
+        <member name="P:Core.Models.NotificationResult.SentAt">
+            <summary>
+            Gets the timestamp when the notification was sent.
+            </summary>
+        </member>
+        <member name="M:Core.Models.NotificationResult.Succeeded(System.String)">
+            <summary>
+            Creates a successful notification result.
+            </summary>
+            <param name="messageId">The unique message identifier from the provider.</param>
+            <returns>A successful NotificationResult instance.</returns>
+        </member>
+        <member name="M:Core.Models.NotificationResult.Succeeded(System.String,System.DateTimeOffset)">
+            <summary>
+            Creates a successful notification result with a specific timestamp.
+            </summary>
+            <param name="messageId">The unique message identifier from the provider.</param>
+            <param name="sentAt">The timestamp when the notification was sent.</param>
+            <returns>A successful NotificationResult instance.</returns>
+        </member>
+        <member name="M:Core.Models.NotificationResult.Failed(System.String)">
+            <summary>
+            Creates a failed notification result.
+            </summary>
+            <param name="error">The error message describing the failure.</param>
+            <returns>A failed NotificationResult instance.</returns>
+        </member>
+    </members>
+</doc>

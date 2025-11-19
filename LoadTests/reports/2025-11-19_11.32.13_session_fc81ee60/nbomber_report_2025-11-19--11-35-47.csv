@@ -1,0 +1,4 @@
+test_suite,test_name,scenario,duration,step_name,request_count,ok,failed,rps,min,mean,max,50_percent,75_percent,95_percent,99_percent,std_dev,data_transfer_min_kb,data_transfer_mean_kb,data_transfer_max_kb,data_transfer_all_mb
+Notification Load Tests,Notification Performance Benchmark,email_notifications,00:02:30,global information,5100,0,5100,0,0,0,0,0,0,0,0,0,0,0,0,0
+Notification Load Tests,Notification Performance Benchmark,sms_notifications,00:01:00,global information,300,0,300,0,0,0,0,0,0,0,0,0,0,0,0,0
+Notification Load Tests,Notification Performance Benchmark,push_notifications,00:01:00,global information,600,0,600,0,0,0,0,0,0,0,0,0,0,0,0,0
