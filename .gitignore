@@ -60,8 +60,8 @@ Thumbs.db
 LoadTests/reports/
 LoadTests/logs/
 
-# Docker
-.dockerignore
+# Docker (uncomment if you have environment-specific dockerignore)
+# .dockerignore
 
 # Azure deployment files
 .publish/
