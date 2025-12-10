@@ -18,7 +18,10 @@ param sqlAdministratorPassword string
 param redisCapacity int = 0
 
 @description('App Service Plan SKU')
-param appServicePlanSku string = environmentName == 'prod' ? 'B1' : 'F1'
+param appServicePlanSku string = 'F1'
+
+@description('Enable premium features (Redis, App Config, Key Vault)')
+param enablePremiumFeatures bool = false
 
 var resourceName = '${appName}-${environmentName}'
 var sqlServerName = '${resourceName}-sql'
@@ -87,7 +90,7 @@ resource appService 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'AzureAppConfig__ConnectionString'
-          value: appConfig.listKeys().primaryConnectionString
+          value: enablePremiumFeatures ? appConfig.listKeys().primaryConnectionString : ''
         }
         {
           name: 'ConnectionStrings__NotificationDb'
@@ -95,7 +98,7 @@ resource appService 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'ConnectionStrings__Redis'
-          value: '${redisCache.properties.hostName}:${redisCache.properties.sslPort},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False'
+          value: enablePremiumFeatures ? '${redisCache.properties.hostName}:${redisCache.properties.sslPort},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False' : ''
         }
       ]
       connectionStrings: [
@@ -152,7 +155,7 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
         }
         {
           name: 'AzureAppConfig__ConnectionString'
-          value: appConfig.listKeys().primaryConnectionString
+          value: enablePremiumFeatures ? appConfig.listKeys().primaryConnectionString : ''
         }
         {
           name: 'ConnectionStrings__NotificationDb'
@@ -160,7 +163,7 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
         }
         {
           name: 'ConnectionStrings__Redis'
-          value: '${redisCache.properties.hostName}:${redisCache.properties.sslPort},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False'
+          value: enablePremiumFeatures ? '${redisCache.properties.hostName}:${redisCache.properties.sslPort},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False' : ''
         }
       ]
       connectionStrings: [
@@ -217,8 +220,8 @@ resource sqlFirewallRule 'Microsoft.Sql/servers/firewallRules@2021-11-01' = {
   }
 }
 
-// Redis Cache
-resource redisCache 'Microsoft.Cache/redis@2021-06-01' = {
+// Redis Cache (only if premium features enabled)
+resource redisCache 'Microsoft.Cache/redis@2021-06-01' = if (enablePremiumFeatures) {
   name: redisCacheName
   location: location
   properties: {
@@ -255,8 +258,8 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-08
   }
 }
 
-// Azure App Configuration
-resource appConfig 'Microsoft.AppConfiguration/configurationStores@2021-10-01-preview' = {
+// Azure App Configuration (only if premium features enabled)
+resource appConfig 'Microsoft.AppConfiguration/configurationStores@2021-10-01-preview' = if (enablePremiumFeatures) {
   name: appConfigName
   location: location
   sku: {
@@ -268,8 +271,8 @@ resource appConfig 'Microsoft.AppConfiguration/configurationStores@2021-10-01-pr
   }
 }
 
-// Key Vault (for secrets management)
-resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
+// Key Vault (for secrets management - only if premium features enabled)
+resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = if (enablePremiumFeatures) {
   name: keyVaultName
   location: location
   properties: {
@@ -287,8 +290,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
   }
 }
 
-// Role assignments for managed identity
-resource appServiceKeyVaultAccess 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+// Role assignments for managed identity (only if premium features enabled)
+resource appServiceKeyVaultAccess 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if (enablePremiumFeatures) {
   name: guid(appService.id, 'Key Vault Secrets User', subscription().subscriptionId)
   scope: keyVault
   properties: {
@@ -298,7 +301,7 @@ resource appServiceKeyVaultAccess 'Microsoft.Authorization/roleAssignments@2020-
   }
 }
 
-resource appServiceSqlAccess 'Microsoft.Sql/servers/administrators@2021-11-01' = {
+resource appServiceSqlAccess 'Microsoft.Sql/servers/administrators@2021-11-01' = if (enablePremiumFeatures) {
   parent: sqlServer
   name: 'ActiveDirectory'
   properties: {

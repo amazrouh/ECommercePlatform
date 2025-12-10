@@ -255,7 +255,7 @@ app.MapGet("/debug", async context =>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Debug Page</title>
+    <title>SignalR Debug Test</title>
     <script src='/js/signalr/signalr.min.js'></script>
 </head>
 <body>
@@ -270,70 +270,83 @@ app.MapGet("/debug", async context =>
 
         function log(message) {
             console.log('DEBUG:', message);
-            messagesDiv.innerHTML += '<div>' + message + '</div>';
+            messagesDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ' - ' + message + '</div>';
         }
 
         function testConnection() {
             try {
-                log('Starting testConnection()...');
-                statusDiv.textContent = 'Testing SignalR...';
+                log('Starting SignalR connection test...');
+                statusDiv.textContent = 'Testing SignalR connection...';
 
                 // Check if signalR is available
                 if (typeof signalR === 'undefined') {
-                    log('ERROR: signalR is undefined!');
-                    statusDiv.textContent = 'SignalR not loaded';
+                    log('ERROR: SignalR library not loaded!');
+                    statusDiv.textContent = 'SignalR library not found';
                     return;
                 }
 
-                log('SignalR available: ' + (typeof signalR !== 'undefined'));
-                log('HubConnectionBuilder: ' + (typeof signalR.HubConnectionBuilder));
+                log('SignalR library loaded successfully');
+                log('Creating connection to /notificationHub...');
 
                 connection = new signalR.HubConnectionBuilder()
                     .withUrl('/notificationHub')
                     .withAutomaticReconnect()
+                    .configureLogging(signalR.LogLevel.Information)
                     .build();
 
                 log('Connection object created');
 
                 connection.on('ReceiveMetrics', (metrics) => {
-                    log('Received metrics: ' + JSON.stringify(metrics, null, 2));
+                    log('📊 Received metrics update: N/min=' + metrics.notificationsPerMinute +
+                        ', Success=' + metrics.successRate + '%, Connections=' + metrics.activeConnections);
+                });
+
+                connection.onreconnecting(() => {
+                    log('Reconnecting to SignalR hub...');
+                    statusDiv.textContent = 'Reconnecting...';
+                });
+
+                connection.onreconnected(() => {
+                    log('Reconnected to SignalR hub');
+                    statusDiv.textContent = 'Reconnected';
                 });
 
                 connection.onclose((error) => {
                     log('Connection closed: ' + (error ? error.message : 'No error'));
+                    statusDiv.textContent = 'Disconnected';
                 });
 
                 log('Starting connection...');
                 connection.start()
                     .then(() => {
-                        log('Connection.start() resolved');
-                        statusDiv.textContent = 'Connected!';
-                        log('Connection started successfully');
+                        log('✅ Connection established successfully!');
+                        statusDiv.textContent = '✅ Connected to SignalR';
+                        log('Attempting to join dashboard group...');
                         return connection.invoke('JoinDashboard');
                     })
                     .then(() => {
-                        log('Joined dashboard group');
+                        log('✅ Successfully joined dashboard group');
+                        statusDiv.textContent = '✅ Connected & Joined Dashboard Group';
                     })
                     .catch(err => {
-                        log('Connection error: ' + err.message);
+                        log('❌ Connection failed: ' + err.message);
                         log('Error type: ' + typeof err);
                         log('Error stack: ' + (err.stack || 'No stack'));
-                        statusDiv.textContent = 'Connection failed: ' + err.message;
+                        statusDiv.textContent = '❌ Connection failed: ' + err.message;
                     });
             } catch (globalError) {
-                log('Global error in testConnection: ' + globalError.message);
-                statusDiv.textContent = 'Error: ' + globalError.message;
+                log('❌ Global error: ' + globalError.message);
+                statusDiv.textContent = '❌ Error: ' + globalError.message;
             }
         }
 
         // Auto-test on load
         window.onload = function() {
-            log('Window loaded, starting test in 1 second...');
+            log('Page loaded, starting connection test in 1 second...');
             setTimeout(testConnection, 1000);
         };
 
-        // Manual test button
-        log('Page loaded successfully');
+        log('SignalR debug page initialized');
     </script>
 </body>
 </html>");

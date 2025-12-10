@@ -91,7 +91,12 @@ public class MessageBatchingService : IDisposable
                     case UpdateType.Metrics:
                         // Send only the latest metrics update
                         var latestMetrics = group.OrderByDescending(m => m.Metrics?.Timestamp).First();
+                        _logger.LogInformation("Broadcasting metrics to dashboard: N/min={NotificationsPerMinute}, Success={SuccessRate}%, Connections={ActiveConnections}",
+                            latestMetrics.Metrics!.NotificationsPerMinute,
+                            latestMetrics.Metrics.SuccessRate,
+                            latestMetrics.Metrics.ActiveConnections);
                         await _hubContext.SendMetricsToDashboard(latestMetrics.Metrics!);
+                        _logger.LogDebug("Metrics broadcast completed successfully");
                         break;
 
                     case UpdateType.NotificationEvent:
@@ -217,5 +222,3 @@ public static class MessageBatchingExtensions
         batcher.QueueMessage(update);
     }
 }
-
-

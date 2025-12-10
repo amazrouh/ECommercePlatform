@@ -189,7 +189,10 @@ public static class NotificationHubExtensions
     /// </summary>
     public static async Task SendMetricsToDashboard(this IHubContext<NotificationHub> hub, DashboardMetrics metrics)
     {
+        var connectionCount = NotificationHub.GetConnectionCount();
+        Console.WriteLine($"[DEBUG] Broadcasting metrics to {connectionCount} dashboard connections: N/min={metrics.NotificationsPerMinute}, Success={metrics.SuccessRate}%, Connections={metrics.ActiveConnections}");
         await hub.Clients.Group("dashboard").SendAsync("ReceiveMetrics", metrics);
+        Console.WriteLine($"[DEBUG] Metrics broadcast sent to 'dashboard' group");
     }
 
     /// <summary>

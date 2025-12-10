@@ -368,6 +368,12 @@
 
             // Dashboard events
             connection.on('ReceiveMetrics', (metrics) => {
+                console.log('[DASHBOARD] Received metrics via SignalR:', {
+                    notificationsPerMinute: metrics.notificationsPerMinute,
+                    successRate: metrics.successRate,
+                    activeConnections: metrics.activeConnections,
+                    timestamp: new Date().toLocaleTimeString()
+                });
                 updateDashboard(metrics);
             });
 
@@ -436,6 +442,7 @@
 
         // Update dashboard with metrics
         function updateDashboard(metrics) {
+            console.log('[DASHBOARD] Updating dashboard UI with metrics:', metrics);
             // Update overview cards
             updateOverviewCards(metrics);
 

@@ -16,23 +16,35 @@ public static class RateLimitingSetup
     public static IServiceCollection AddCustomRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         var rateLimitConfig = configuration.GetSection("Security:RateLimit").Get<RateLimitConfig>() ?? new RateLimitConfig();
+        var isRateLimitingDisabled = configuration.GetValue<bool>("Security:RateLimit:Disabled", false);
 
         services.AddRateLimiter(options =>
         {
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            // If rate limiting is disabled, allow unlimited requests
+            if (isRateLimitingDisabled)
             {
-                // Rate limit by IP address
-                var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                {
+                    return RateLimitPartition.GetNoLimiter("");
+                });
+            }
+            else
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                {
+                    // Rate limit by IP address
+                    var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: ipAddress,
-                    factory: partition => new FixedWindowRateLimiterOptions
-                    {
-                        AutoReplenishment = true,
-                        PermitLimit = rateLimitConfig.PermitLimit,
-                        Window = TimeSpan.FromSeconds(rateLimitConfig.WindowSeconds)
-                    });
-            });
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: ipAddress,
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = rateLimitConfig.PermitLimit,
+                            Window = TimeSpan.FromSeconds(rateLimitConfig.WindowSeconds)
+                        });
+                });
+            }
 
             // Configure rate limit exceeded response
             options.OnRejected = async (context, token) =>
