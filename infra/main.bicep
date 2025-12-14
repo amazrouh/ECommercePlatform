@@ -2,7 +2,7 @@
 param environmentName string = 'dev'
 
 @description('Location for all resources.')
-param location string = resourceGroup().location
+param location string = 'eastus'
 
 @description('The name of the application')
 param appName string = 'notificationservice'
@@ -33,8 +33,7 @@ var appInsightsName = '${resourceName}-insights'
 var appConfigName = '${resourceName}-config'
 var keyVaultName = '${resourceName}-kv'
 
-// Resource Group (if needed, can be deployed separately)
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing
+// Note: Resource Group is created separately and specified in deployment command
 
 // App Service Plan
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
