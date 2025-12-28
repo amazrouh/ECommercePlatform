@@ -37,6 +37,12 @@ public class DashboardMetricsService : BackgroundService, Core.Interfaces.IMetri
     private DateTimeOffset _lastMetricsUpdate = DateTimeOffset.UtcNow;
     private bool _historicalDataLoaded = false;
 
+    // AI Metrics tracking
+    private readonly ConcurrentDictionary<string, long> _sentimentCounts = new();
+    private readonly ConcurrentDictionary<string, long> _languageCounts = new();
+    private readonly ConcurrentBag<double> _aiResponseTimes = new();
+    private long _totalAIAnalyses = 0;
+
     public DashboardMetricsService(
         ILogger<DashboardMetricsService> logger,
         IHubContext<NotificationHub> hubContext,
@@ -130,6 +136,33 @@ public class DashboardMetricsService : BackgroundService, Core.Interfaces.IMetri
 
         // Queue notification event for batched sending
         _messageBatcher.QueueNotificationEvent(notificationEvent);
+    }
+
+    /// <summary>
+    /// Records AI analysis metrics for dashboard tracking
+    /// </summary>
+    public void RecordAIMetrics(string sentiment, string language, double responseTimeMs, bool success = true)
+    {
+        Interlocked.Increment(ref _totalAIAnalyses);
+
+        // Update sentiment counts
+        _sentimentCounts.AddOrUpdate(sentiment, 1, (_, count) => count + 1);
+
+        // Update language counts
+        _languageCounts.AddOrUpdate(language, 1, (_, count) => count + 1);
+
+        // Update AI response times (keep last 50)
+        _aiResponseTimes.Add(responseTimeMs);
+        if (_aiResponseTimes.Count > 50)
+        {
+            var tempList = _aiResponseTimes.ToList();
+            tempList.RemoveRange(0, tempList.Count - 50);
+            _aiResponseTimes.Clear();
+            foreach (var time in tempList)
+            {
+                _aiResponseTimes.Add(time);
+            }
+        }
     }
 
     private async Task LoadHistoricalDataAsync()
@@ -259,6 +292,13 @@ public class DashboardMetricsService : BackgroundService, Core.Interfaces.IMetri
         {
             _logger.LogWarning(ex, "Failed to collect system performance metrics");
         }
+
+        // Get AI metrics
+        metrics.TotalAIAnalyses = _totalAIAnalyses;
+        metrics.SentimentDistribution = new Dictionary<string, long>(_sentimentCounts);
+        metrics.LanguageDistribution = new Dictionary<string, long>(_languageCounts);
+        var aiResponseTimes = _aiResponseTimes.ToArray();
+        metrics.AverageAIResponseTimeMs = aiResponseTimes.Length > 0 ? aiResponseTimes.Average() : 0;
 
         // Queue metrics for batched sending
         _messageBatcher.QueueMetricsUpdate(metrics);

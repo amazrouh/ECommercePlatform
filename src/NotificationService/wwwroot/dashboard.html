@@ -120,6 +120,24 @@
             </div>
         </div>
 
+        <!-- AI Intelligence Metrics -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-robot"></i> AI Intelligence Metrics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="ai-metrics">
+                            <!-- AI metrics will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Errors -->
         <div class="row mb-4">
             <div class="col-12">
@@ -460,6 +478,9 @@
 
             // Update errors
             updateErrors(metrics.recentErrors);
+
+            // Update AI metrics
+            updateAIMetrics(metrics);
         }
 
         // Update overview cards
@@ -498,6 +519,30 @@
                         <div class="card-body text-center">
                             <div class="h3 mb-0">${metrics.activeConnections}</div>
                             <small class="text-muted">Active Connections</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0 text-info">${metrics.totalAIAnalyses || 0}</div>
+                            <small class="text-muted">AI Analyses</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0">${metrics.averageAIResponseTimeMs?.toFixed(0) || 0}ms</div>
+                            <small class="text-muted">AI Response Time</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metric-card">
+                        <div class="card-body text-center">
+                            <div class="h3 mb-0 text-primary">${Object.keys(metrics.sentimentDistribution || {}).length}</div>
+                            <small class="text-muted">Languages Detected</small>
                         </div>
                     </div>
                 </div>
@@ -588,6 +633,90 @@
             } else {
                 container.innerHTML = '<div class="list-group-item text-muted">No recent errors</div>';
             }
+        }
+
+        // Update AI metrics
+        function updateAIMetrics(metrics) {
+            const container = document.getElementById('ai-metrics');
+
+            if (!metrics.totalAIAnalyses || metrics.totalAIAnalyses === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No AI analyses performed yet. Send a notification using the smart endpoint to see AI metrics.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sentiment distribution chart
+            const sentimentData = metrics.sentimentDistribution || {};
+            const totalSentiment = Object.values(sentimentData).reduce((a, b) => a + b, 0);
+
+            // Language distribution
+            const languageData = metrics.languageDistribution || {};
+
+            container.innerHTML = `
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Sentiment Analysis</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="sentimentChart" class="chart-container"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Language Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                ${Object.entries(languageData).map(([lang, count]) =>
+                                    `<div class="col-4 mb-2">
+                                        <div class="h5 mb-0 text-primary">${count}</div>
+                                        <small class="text-muted">${lang.toUpperCase()}</small>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Create sentiment pie chart
+            setTimeout(() => {
+                const ctx = document.getElementById('sentimentChart');
+                if (ctx && window.Chart) {
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(sentimentData),
+                            datasets: [{
+                                data: Object.values(sentimentData),
+                                backgroundColor: [
+                                    '#28a745', // Positive - green
+                                    '#dc3545', // Negative - red
+                                    '#ffc107', // Neutral - yellow
+                                    '#6c757d'  // Mixed - gray
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 100);
         }
 
         // Handle real-time updates

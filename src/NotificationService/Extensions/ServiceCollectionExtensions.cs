@@ -80,6 +80,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddHttpContextAccessor();
 
+        // Add AI services
+        services.AddScoped<Core.Interfaces.IAIService, AzureAIService>();
+
         // Add dashboard services
         services.AddSingleton<MessageBatchingService>();
         services.AddSingleton<DashboardMetricsService>();

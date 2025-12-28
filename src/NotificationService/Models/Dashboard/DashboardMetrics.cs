@@ -64,9 +64,33 @@ public class DashboardMetrics
     public Dictionary<NotificationType, StrategyMetrics> StrategyMetrics { get; set; } = new();
 
     /// <summary>
+    /// Total AI analyses performed
+    /// </summary>
+    [Key(10)]
+    public long TotalAIAnalyses { get; set; }
+
+    /// <summary>
+    /// Sentiment distribution (Positive, Negative, Neutral)
+    /// </summary>
+    [Key(11)]
+    public Dictionary<string, long> SentimentDistribution { get; set; } = new();
+
+    /// <summary>
+    /// Language distribution by ISO codes
+    /// </summary>
+    [Key(12)]
+    public Dictionary<string, long> LanguageDistribution { get; set; } = new();
+
+    /// <summary>
+    /// Average AI analysis response time in milliseconds
+    /// </summary>
+    [Key(13)]
+    public double AverageAIResponseTimeMs { get; set; }
+
+    /// <summary>
     /// Recent errors (last 10)
     /// </summary>
-    [Key(9)]
+    [Key(14)]
     public List<string> RecentErrors { get; set; } = new();
 }
 
