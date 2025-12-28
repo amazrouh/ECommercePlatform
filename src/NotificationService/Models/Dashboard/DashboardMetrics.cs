@@ -336,5 +336,3 @@ public class ConnectionInfo
     [Key(3)]
     public string ClientType { get; set; } = string.Empty;
 }
-
-

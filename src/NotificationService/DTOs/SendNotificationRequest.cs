@@ -28,6 +28,13 @@ public class SendNotificationRequest
     public string Subject { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the sender's contact information (optional, will be auto-populated from JWT if authenticated).
+    /// </summary>
+    [StringLength(256)]
+    [EmailAddress]
+    public string? From { get; set; }
+
+    /// <summary>
     /// Gets or sets the body content of the notification.
     /// </summary>
     [Required]

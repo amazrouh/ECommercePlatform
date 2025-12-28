@@ -17,10 +17,12 @@ public class AuthService : IAuthService
 
     // Simple in-memory user store for demonstration
     // In production, this would be replaced with database lookups
-    private readonly Dictionary<string, (string Password, string Role)> _users = new()
+    private readonly Dictionary<string, (string Password, string Role, string Email, string CustomerId, string PhoneNumber)> _users = new()
     {
-        { "admin", ("admin123", "Admin") },
-        { "user", ("user123", "User") }
+        { "admin", ("admin123", "Admin", "admin@company.com", "CUST-001", "+1-555-0100") },
+        { "user", ("user123", "User", "john.doe@example.com", "CUST-002", "+1-555-0101") },
+        { "customer1", ("pass123", "Customer", "sarah.smith@email.com", "CUST-003", "+1-555-0102") },
+        { "customer2", ("pass123", "Customer", "mike.johnson@email.com", "CUST-004", "+1-555-0103") }
     };
 
     public AuthService(IOptions<JwtConfig> jwtConfig)
@@ -73,12 +75,18 @@ public class AuthService : IAuthService
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfig.Secret));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+        // Get customer details from user store
+        var (password, userRole, email, customerId, phoneNumber) = _users[username];
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(ClaimTypes.Name, username),
-            new Claim(ClaimTypes.Role, role),
+            new Claim(ClaimTypes.Role, userRole),
+            new Claim(ClaimTypes.Email, email),
+            new Claim("customerId", customerId),
+            new Claim("phoneNumber", phoneNumber),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
         };
 

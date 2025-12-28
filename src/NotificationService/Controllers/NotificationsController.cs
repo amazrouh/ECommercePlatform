@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.FeatureManagement;
 using NotificationService.DTOs;
+using System.Security.Claims;
 
 namespace NotificationService.Controllers;
 
@@ -62,7 +63,47 @@ public class NotificationsController : ControllerBase
             return BadRequest(new { message = $"Notification type {request.Type} is currently disabled" });
         }
 
+        // Extract customer context from JWT claims
+        var customerContext = ExtractCustomerContext();
+
+        // Override 'from' field if not provided in request but available from authentication
+        if (string.IsNullOrEmpty(request.From) && !string.IsNullOrEmpty(customerContext.Email))
+        {
+            request.From = customerContext.Email;
+        }
+
         var message = _mapper.Map<Core.Models.NotificationMessage>(request);
+
+        // Add customer context to metadata
+        var customerMetadata = new Dictionary<string, object>();
+        if (!string.IsNullOrEmpty(customerContext.Email))
+        {
+            customerMetadata["customer_email"] = customerContext.Email;
+        }
+        if (!string.IsNullOrEmpty(customerContext.CustomerId))
+        {
+            customerMetadata["customer_id"] = customerContext.CustomerId;
+        }
+        if (!string.IsNullOrEmpty(customerContext.PhoneNumber))
+        {
+            customerMetadata["customer_phone"] = customerContext.PhoneNumber;
+        }
+        if (!string.IsNullOrEmpty(customerContext.UserId))
+        {
+            customerMetadata["user_id"] = customerContext.UserId;
+        }
+        customerMetadata["submitted_at"] = DateTimeOffset.UtcNow.ToString("O");
+
+        // Merge with existing metadata if any
+        if (message.Metadata != null)
+        {
+            foreach (var kvp in message.Metadata)
+            {
+                customerMetadata[kvp.Key] = kvp.Value;
+            }
+        }
+
+        message = message.WithMetadata(customerMetadata);
         var result = await _notificationService.SendAsync(request.Type, message, cancellationToken);
 
         var response = _mapper.Map<NotificationResponse>((result, request.Type, request.To));
@@ -96,6 +137,15 @@ public class NotificationsController : ControllerBase
             return BadRequest(new { message = $"Notification type {request.Type} is currently disabled" });
         }
 
+        // Extract customer context from JWT claims
+        var customerContext = ExtractCustomerContext();
+
+        // Override 'from' field if not provided in request but available from authentication
+        if (string.IsNullOrEmpty(request.From) && !string.IsNullOrEmpty(customerContext.Email))
+        {
+            request.From = customerContext.Email;
+        }
+
         // Perform AI analysis on the notification content
         var aiAnalysis = await _aiService.AnalyzeNotificationAsync(request.Body, cancellationToken);
 
@@ -111,6 +161,25 @@ public class NotificationsController : ControllerBase
             ["ai_confidence"] = aiAnalysis.SentimentConfidence.ToString("F2"),
             ["ai_analyzed_at"] = aiAnalysis.AnalyzedAt.ToString("O")
         };
+
+        // Add customer context to metadata
+        if (!string.IsNullOrEmpty(customerContext.Email))
+        {
+            aiMetadata["customer_email"] = customerContext.Email;
+        }
+        if (!string.IsNullOrEmpty(customerContext.CustomerId))
+        {
+            aiMetadata["customer_id"] = customerContext.CustomerId;
+        }
+        if (!string.IsNullOrEmpty(customerContext.PhoneNumber))
+        {
+            aiMetadata["customer_phone"] = customerContext.PhoneNumber;
+        }
+        if (!string.IsNullOrEmpty(customerContext.UserId))
+        {
+            aiMetadata["user_id"] = customerContext.UserId;
+        }
+        aiMetadata["submitted_at"] = DateTimeOffset.UtcNow.ToString("O");
 
         // Merge with existing metadata if any
         if (originalMessage.Metadata != null)
@@ -194,5 +263,22 @@ public class NotificationsController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 new { status = "unhealthy", message = "Service check failed" });
         }
+    }
+
+    /// <summary>
+    /// Extracts customer context from JWT claims.
+    /// </summary>
+    /// <returns>Customer context information.</returns>
+    private (string Email, string CustomerId, string PhoneNumber, string UserId) ExtractCustomerContext()
+    {
+        var email = User.FindFirst(ClaimTypes.Email)?.Value ??
+                   User.FindFirst("email")?.Value ??
+                   string.Empty;
+
+        var customerId = User.FindFirst("customerId")?.Value ?? string.Empty;
+        var phoneNumber = User.FindFirst("phoneNumber")?.Value ?? string.Empty;
+        var userId = User.Identity?.Name ?? string.Empty;
+
+        return (email, customerId, phoneNumber, userId);
     }
 }
