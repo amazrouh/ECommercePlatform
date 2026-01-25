@@ -89,6 +89,33 @@
       ],
       "UpstreamPathTemplate": "/api/orders",
       "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/notifications/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "notificationservice", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/dashboard",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "notificationservice", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/dashboard",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+    },
+    {
+      "DownstreamPathTemplate": "/dashboard",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "notificationservice", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/dashboard",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
     }
   ],
   "GlobalConfiguration": {

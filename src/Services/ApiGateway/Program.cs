@@ -3,7 +3,8 @@ using Ocelot.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Ocelot configuration
+// Add Ocelot configuration - try docker config first, fallback to local
+builder.Configuration.AddJsonFile("ocelot.docker.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
 // Add Ocelot

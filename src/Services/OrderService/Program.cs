@@ -45,7 +45,15 @@ builder.Services.AddSwaggerGen(c =>
 // Database
 builder.Services.AddDbContext<OrderDbContext>(options =>
 {
-    options.UseInMemoryDatabase("OrderDb");
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("InMemory"))
+    {
+        options.UseInMemoryDatabase("OrderDb");
+    }
+    else
+    {
+        options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure(3));
+    }
 });
 
 // JWT Authentication

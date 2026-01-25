@@ -42,10 +42,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Database (In-memory for demo)
+// Database
 builder.Services.AddDbContext<CartDbContext>(options =>
 {
-    options.UseInMemoryDatabase("CartDb");
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("InMemory"))
+    {
+        options.UseInMemoryDatabase("CartDb");
+    }
+    else
+    {
+        options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure(3));
+    }
 });
 
 // JWT Authentication
