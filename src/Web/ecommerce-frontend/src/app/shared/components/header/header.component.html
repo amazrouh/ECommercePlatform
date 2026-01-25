@@ -1,0 +1,37 @@
+<header class="header">
+  <div class="header-container">
+    <a routerLink="/" class="logo">
+      <span class="logo-icon">🛒</span>
+      <span class="logo-text">E-Commerce</span>
+    </a>
+
+    <nav class="nav" [class.open]="isMenuOpen">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
+      <a routerLink="/products" routerLinkActive="active">Products</a>
+
+      <ng-container *ngIf="currentUser">
+        <a routerLink="/orders" routerLinkActive="active">Orders</a>
+        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+      </ng-container>
+    </nav>
+
+    <div class="header-actions">
+      <a routerLink="/cart" class="cart-link">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-badge" *ngIf="cartSummary.itemCount > 0">{{ cartSummary.itemCount }}</span>
+      </a>
+
+      <ng-container *ngIf="!currentUser">
+        <a routerLink="/login" class="btn btn-outline">Login</a>
+        <a routerLink="/register" class="btn btn-primary">Register</a>
+      </ng-container>
+
+      <ng-container *ngIf="currentUser">
+        <span class="user-greeting">Hi, {{ currentUser.firstName }}</span>
+        <button class="btn btn-outline" (click)="logout()">Logout</button>
+      </ng-container>
+
+      <button class="menu-toggle" (click)="toggleMenu()">☰</button>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,33 @@
+<div class="profile-page">
+  <h1>My Profile</h1>
+
+  <div class="profile-card" *ngIf="user">
+    <div class="avatar">
+      {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+    </div>
+
+    <div class="profile-info">
+      <h2>{{ user.fullName }}</h2>
+      <p class="role">{{ user.role }}</p>
+    </div>
+
+    <div class="profile-details">
+      <div class="detail-item">
+        <span class="label">Email</span>
+        <span class="value">{{ user.email }}</span>
+      </div>
+      <div class="detail-item" *ngIf="user.phoneNumber">
+        <span class="label">Phone</span>
+        <span class="value">{{ user.phoneNumber }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">Member Since</span>
+        <span class="value">{{ user.createdAt | date:'mediumDate' }}</span>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <a routerLink="/orders" class="btn btn-outline">View Orders</a>
+    </div>
+  </div>
+</div>

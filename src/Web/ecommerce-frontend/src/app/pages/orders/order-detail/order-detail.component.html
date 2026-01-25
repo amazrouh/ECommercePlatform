@@ -1,0 +1,64 @@
+<div class="order-detail-page" *ngIf="!loading && order">
+  <div class="back-link">
+    <a routerLink="/orders">← Back to Orders</a>
+  </div>
+
+  <div class="order-header">
+    <div>
+      <h1>Order {{ order.orderNumber }}</h1>
+      <p class="order-date">Placed on {{ order.createdAt | date:'fullDate' }}</p>
+    </div>
+    <span class="order-status" [class]="getStatusClass(order.status)">{{ order.statusDisplay }}</span>
+  </div>
+
+  <div class="order-content">
+    <!-- Order Items -->
+    <section class="section">
+      <h2>Items</h2>
+      <div class="items-list">
+        <div class="item" *ngFor="let item of order.items">
+          <div class="item-image">
+            <img [src]="item.productThumbnail || 'https://via.placeholder.com/80'" [alt]="item.productName">
+          </div>
+          <div class="item-details">
+            <h3>{{ item.productName }}</h3>
+            <p class="sku">SKU: {{ item.sku }}</p>
+          </div>
+          <div class="item-qty">x{{ item.quantity }}</div>
+          <div class="item-price">${{ item.lineTotal | number:'1.2-2' }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Shipping Info -->
+    <section class="section">
+      <h2>Shipping Address</h2>
+      <p>{{ order.shippingAddress.street }}<br>
+      {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} {{ order.shippingAddress.postalCode }}<br>
+      {{ order.shippingAddress.country }}</p>
+
+      <div class="tracking" *ngIf="order.shipping">
+        <h3>Tracking</h3>
+        <p><strong>Carrier:</strong> {{ order.shipping.carrier }}</p>
+        <p *ngIf="order.shipping.trackingNumber"><strong>Tracking #:</strong> {{ order.shipping.trackingNumber }}</p>
+      </div>
+    </section>
+
+    <!-- Order Summary -->
+    <section class="section summary">
+      <h2>Order Summary</h2>
+      <div class="row"><span>Subtotal</span><span>${{ order.subtotal | number:'1.2-2' }}</span></div>
+      <div class="row"><span>Shipping</span><span>${{ order.shippingCost | number:'1.2-2' }}</span></div>
+      <div class="row"><span>Tax</span><span>${{ order.tax | number:'1.2-2' }}</span></div>
+      <div class="row" *ngIf="order.discount > 0"><span>Discount</span><span>-${{ order.discount | number:'1.2-2' }}</span></div>
+      <div class="row total"><span>Total</span><span>${{ order.total | number:'1.2-2' }}</span></div>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions" *ngIf="canCancel()">
+      <button class="btn btn-outline" (click)="cancelOrder()">Cancel Order</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading" *ngIf="loading">Loading order...</div>

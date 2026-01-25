@@ -1,0 +1,73 @@
+<div class="product-detail-page" *ngIf="!loading && product">
+  <div class="breadcrumb">
+    <a routerLink="/products">Products</a> / {{ product.categoryName }} / {{ product.name }}
+  </div>
+
+  <div class="product-container">
+    <div class="product-images">
+      <div class="main-image">
+        <img [src]="selectedImage || 'https://via.placeholder.com/500x400'" [alt]="product.name">
+        <span class="sale-badge" *ngIf="product.salePrice">SALE</span>
+      </div>
+      <div class="thumbnails" *ngIf="product.imageUrls.length > 1">
+        <img
+          *ngFor="let img of product.imageUrls"
+          [src]="img"
+          [alt]="product.name"
+          [class.active]="img === selectedImage"
+          (click)="selectImage(img)">
+      </div>
+    </div>
+
+    <div class="product-info">
+      <h1>{{ product.name }}</h1>
+      <p class="sku">SKU: {{ product.sku }}</p>
+
+      <div class="rating">
+        <span class="stars">⭐ {{ product.averageRating | number:'1.1-1' }}</span>
+        <span class="reviews">({{ product.reviewCount }} reviews)</span>
+      </div>
+
+      <div class="price">
+        <span class="current-price" [class.sale]="product.salePrice">
+          ${{ (product.salePrice || product.price) | number:'1.2-2' }}
+        </span>
+        <span class="original-price" *ngIf="product.salePrice">
+          ${{ product.price | number:'1.2-2' }}
+        </span>
+        <span class="discount" *ngIf="product.salePrice">
+          Save {{ ((1 - product.salePrice / product.price) * 100) | number:'1.0-0' }}%
+        </span>
+      </div>
+
+      <div class="stock-status" [class.in-stock]="product.isInStock" [class.out-of-stock]="!product.isInStock">
+        <span *ngIf="product.isInStock">✓ In Stock ({{ product.stockQuantity }} available)</span>
+        <span *ngIf="!product.isInStock">✗ Out of Stock</span>
+      </div>
+
+      <p class="description">{{ product.description }}</p>
+
+      <div class="purchase-section" *ngIf="product.isInStock">
+        <div class="quantity-selector">
+          <button (click)="decrementQuantity()">-</button>
+          <span>{{ quantity }}</span>
+          <button (click)="incrementQuantity()">+</button>
+        </div>
+        <button class="btn btn-primary btn-large" (click)="addToCart()">
+          Add to Cart - ${{ ((product.salePrice || product.price) * quantity) | number:'1.2-2' }}
+        </button>
+      </div>
+
+      <div class="category">
+        <strong>Category:</strong>
+        <a [routerLink]="['/products']" [queryParams]="{categoryId: product.categoryId}">
+          {{ product.categoryName }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading" *ngIf="loading">
+  <p>Loading product details...</p>
+</div>
